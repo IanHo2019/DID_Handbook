@@ -1,0 +1,78 @@
+# DID Handbook
+Comments on better coding or error correction are welcomed. **Contact:** [ianhe@ou.edu](mailto:ianhe@ou.edu?subject=[GitHub]%20DID%20Handbook).
+
+**Difference in differences** (also written as DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics paper published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details in each format of DID; please read those papers for greater details.
+
+Before starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID.
+
+## Canonical, Classical, and Textbook DID
+Difference in differences, as the name implies, involves comparisons between two groups across two periods. The first difference is between groups and the second difference is always between time. Those units in a group that becomes treated after the treatment time are referred to as the **treated group**. The other units are referred to as the **control group**. DID typically focuses on identifying and estimating the **average treatment effect on the treated (ATT)**; that is, it measures the average effect of the treatment on those who switch from being untreated to being treated. The dominant approach to implementing DID specifications in empirical research is to run **two-way fixed effects (TWFE)** regressions:
+$$Y_{it} = \theta_t + \eta_i + \alpha D_{it} + v_{it}$$
+where
+  * $Y_{it}$ is outcome of interest;
+  * $\theta_t$ is a time fixed effect;
+  * $\eta_i$ is a unit or individual fixed effect;
+  * $D_{it}$ is a 0/1 indicator for whether or not unit $i$ participating in the treatment in time period $t$;
+  * $v_{it}$ are idiosyncratic and time-varying unobservables.
+
+Under **treatment effect homogeneity** and under the **parallel trends assumption**, $\alpha$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in current DID literature.
+
+Note that here we only consider the **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers naively think that DID can be easily applied to non-absorbing treatment; I don't think especially when researchers try to estimate the dynamic effects. 
+
+The TWFE regression can be easily run in Stata by using command `xtreg` or `reghdfe`. To use the latter command, we have to install `reghdfe` and `ftools` packages. The basic syntax is below:
+```stata
+reghdfe Y D, absorb(id t)
+```
+The `absorb` option is used to specify the fixed effects.
+
+This format of DID involves only two time periods and two groups; that's why I call it canonical, classic, and textbook format. *Canonical* means "standard": this is the original and simplest one showing the key rationale behind the DID; *classical* means "traditional": it has been established for a long time, and sadly it becomes gradually outdated in modern applications; *textbook* means... it has been introduced in many textbooks, including Bruce Hansen's *[Econometrics](https://press.princeton.edu/books/hardcover/9780691235899/econometrics)* (2022) and Jeffrey Wooldrige's *[Econometric Analysis of Cross Section and Panel Data](https://mitpress.mit.edu/9780262232586/econometric-analysis-of-cross-section-and-panel-data/)* (2010).
+
+Before 2017, many researchers believe that the TWFE DID can be easily generalized to include more time periods and more groups. Unfortunately, it is not easy! It is definitely not easy, as shown in the following.
+
+## Bacon Decomposition for Static DID
+First, what is static DID? **Static DID specifications** estimate a single treatment effect that is time invariant. That is, we only get one beta by running a static DID specification, and we use the one beta to summarize the treatment effect on the moment when the policy is implemented. The classical DID is exactly a static DID.
+
+Second, what is Bacon decomposition? This concept comes from [Goodman-Bacon (2021)](https://doi.org/10.1016/j.jeconom.2021.03.014). The author proposes the **DID decomposition theorem**, stating that the TWFE DID estimator equals a weighted average of all possible two-group/two-period DID estimators. For emphasizing this finding, the author writes the DID estimator as $\beta^{2\times2}$.
+
+The DID decomposition theorem is important because it tells us the existence of a "bad" comparison in the classical DID if we include units treated at multiple time periods --- that is, comparing the late treatment group to the early treatment group before and after the late treatment. It is suggested that we should do the Bacon decomposition when running a static DID specification, by which we can see where our estimate comes from. For example, a negative DID estimate shows up possibly just because a negative result from a heavily weighted bad comparison.
+
+To do the Bacon decomposition in Stata, please install the `bacondecomp` package and use the following syntax:
+```stata
+bacondecomp Y D, ddtail
+```
+`Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition.
+
+## Dynamic DID
+Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once Sibal Yang posts a new problem set on Canvas, what is the effect of the problem set on students’ happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
+$$Y_{it} = \alpha_i + \gamma_t + \sum_{k \in \{-4, -3, -2, 0, 1, 2, 3, 4, 5\}} \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{st}^k + \delta_2 \sum_{k > 5} D_{st}^k + \varepsilon_{it}$$
+Within dynamic specifications, researchers need to address the issue of multi-collinearity. The most common way to avoid the multi-collinearity is to exclude the treatment dummy for period -1 (the last period before the treatment) as I did above. Additionally, above I binned distant relative periods, which is also a common action in empirical research.
+
+In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians are trying to solve this problem and they are keep trying. In the following, I only cover several brand new (dynamic) DID estimators with their corresponding commands in Stata.
+
+### Interaction-Weighted Estimator for DID
+[Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) proposes an interaction-weighted (IW) estimator. Their estimator improves upon the TWFE estimator by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
+
+One of the authors, [Liyang Sun](https://lsun20.github.io/) at MIT, wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. The basic syntax is below:
+```stata
+eventstudyinteract y rel_time_list, \\\
+  absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
+```
+Note that we must include a list of relative time indicators as we would have included in the classical dynamic DID regression.
+
+Something sad is that this command is not well compatible with the `estout` package; I still don't find a good package/command to export the results from the IW DID regression.
+
+### Imputation Estimator for DID
+[Borusyak, Jaravel & Spiess (2022, working paper)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) proposes a finite-sample efficient robust DID estimator using an imputation procedure. The imputation-based method is welcomed because
+  1. it is computationally efficient (it only requires estimating a simple TWFE model);
+  1. the imputation easily links the parallel trends and no anticipation assumptions to the estimator.
+
+One of the authors, [Kirill Borusyak](https://sites.google.com/view/borusyak/home) at University College London (UCL), wrote a Stata package `did_imputation` for implementing their imputation approach to estimate the dynamic treatment effects and do pre-trend testing in event studies. The basic syntax is below:
+```stata
+did_imputation Y id t Ei, fe(id t) horizons(#) pretrends(#)
+```
+The `horizons` option tells Stata how many forward horizons of treatment effects we want to estimate, and the `pretrends` option tells Stata to perform a pre-trend testing for some periods. The post-treatment coefficients are reported as `tau0`, `tau1`, ...; the pre-trend coefficients are reported as `pre1`, `pre2`, .... In contrast with the aforementioned approaches, here the number of pre-trend coefficients does not affect the post-treatment effect estimates, which are always computed under the assumption of parallel trends and no anticipation.
+
+Furthermore, Borusyak, Borusyak, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
+
+### To be continued...
+Potential candidate: [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001)
