@@ -17,7 +17,7 @@ where
 
 Under **treatment effect homogeneity** and under the **parallel trends assumption**, $\alpha$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in current DID literature.
 
-Note that here we only consider the **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers naively think that DID can be easily applied to non-absorbing treatment; I don't think especially when researchers try to estimate the dynamic effects. 
+Note that here we only consider the **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers think that DID can be easily applied to non-absorbing treatment; I don't think so, especially when researchers try to estimate the dynamic effects. 
 
 The TWFE regression can be easily run in Stata by using command `xtreg` or `reghdfe`. To use the latter command, we have to install `reghdfe` and `ftools` packages. The basic syntax is below:
 ```stata
@@ -25,9 +25,9 @@ reghdfe Y D, absorb(id t)
 ```
 The `absorb` option is used to specify the fixed effects.
 
-This format of DID involves only two time periods and two groups; that's why I call it canonical, classic, and textbook format. *Canonical* means "standard": this is the original and simplest one showing the key rationale behind the DID; *classical* means "traditional": it has been established for a long time, and sadly it becomes gradually outdated in modern applications; *textbook* means... it has been introduced in many textbooks, including Bruce Hansen's *[Econometrics](https://press.princeton.edu/books/hardcover/9780691235899/econometrics)* (2022) and Jeffrey Wooldrige's *[Econometric Analysis of Cross Section and Panel Data](https://mitpress.mit.edu/9780262232586/econometric-analysis-of-cross-section-and-panel-data/)* (2010).
+This format of DID involves only two time periods and two groups; that's why I call it canonical, classic, and textbook format. *Canonical* means "standard": this is the original and simplest one showing the key rationale behind the DID; *classical* means "traditional": it has been established for a long time, and sadly it becomes gradually outdated in modern applications; *textbook* means... it has been introduced in many textbooks, such as Bruce Hansen's *[Econometrics](https://press.princeton.edu/books/hardcover/9780691235899/econometrics)* (2022) and Jeffrey Wooldrige's *[Econometric Analysis of Cross Section and Panel Data](https://mitpress.mit.edu/9780262232586/econometric-analysis-of-cross-section-and-panel-data/)* (2010).
 
-Before 2017, many researchers believe that the TWFE DID can be easily generalized to include more time periods and more groups. Unfortunately, it is not easy! It is definitely not easy, as shown in the following.
+Before 2017, many researchers naively believe that the TWFE DID can be easily generalized to include more time periods and more groups. Unfortunately, it is not easy! It is definitely not easy, as shown in the following.
 
 ## Bacon Decomposition for Static DID
 First, what is static DID? **Static DID specifications** estimate a single treatment effect that is time invariant. That is, we only get one beta by running a static DID specification, and we use the one beta to summarize the treatment effect on the moment when the policy is implemented. The classical DID is exactly a static DID.
