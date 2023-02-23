@@ -32,7 +32,7 @@ Before 2017, many researchers naively believe that the TWFE DID can be easily ge
 ## Bacon Decomposition for Static DID
 First, what is static DID? **Static DID specifications** estimate a single treatment effect that is time invariant. That is, we only get one beta by running a static DID specification, and we use the one beta to summarize the treatment effect on the moment when the policy is implemented. The classical DID is exactly a static DID.
 
-Second, what is Bacon decomposition? This concept comes from [Goodman-Bacon (2021)](https://doi.org/10.1016/j.jeconom.2021.03.014). The author proposes the **DID decomposition theorem**, stating that the TWFE DID estimator equals a weighted average of all possible two-group/two-period DID estimators. For emphasizing this finding, the author writes the DID estimator as $\beta^{2\times2}$.
+Second, what is Bacon decomposition? This concept comes from [Goodman-Bacon (2021)](https://doi.org/10.1016/j.jeconom.2021.03.014). The author proposes and proves the **DID decomposition theorem**, stating that the TWFE DID estimator equals a weighted average of all possible two-group/two-period DID estimators. For emphasizing this finding, the author writes the DID estimator as $\beta^{2\times2}$.
 
 The DID decomposition theorem is important because it tells us the existence of a "bad" comparison in the classical DID if we include units treated at multiple time periods --- that is, comparing the late treatment group to the early treatment group before and after the late treatment. It is suggested that we should do the Bacon decomposition when running a static DID specification, by which we can see where our estimate comes from. For example, a negative DID estimate shows up possibly just because a negative result from a heavily weighted bad comparison.
 
@@ -44,7 +44,7 @@ bacondecomp Y D, ddtail
 
 ## Dynamic DID
 Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once Sibal Yang posts a new problem set on Canvas, what is the effect of the problem set on students’ happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
-$$Y_{it} = \alpha_i + \gamma_t + \sum_{k \in \{-4, -3, -2, 0, 1, 2, 3, 4, 5\}} \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{st}^k + \delta_2 \sum_{k > 5} D_{st}^k + \varepsilon_{it}$$
+$$Y_{it} = \alpha_i + \gamma_t + \sum_{k \in \{-4, -3, -2, 0, 1, 2, 3, 4, 5\}} \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
 Within dynamic specifications, researchers need to address the issue of multi-collinearity. The most common way to avoid the multi-collinearity is to exclude the treatment dummy for period -1 (the last period before the treatment) as I did above. Additionally, above I binned distant relative periods, which is also a common action in empirical research.
 
 In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians are trying to solve this problem and they are keep trying. In the following, I only cover several brand new (dynamic) DID estimators with their corresponding commands in Stata.
@@ -52,7 +52,7 @@ In this format of DID, an unbiased estimation becomes much more complicated than
 ### Interaction-Weighted Estimator for DID
 [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) proposes an interaction-weighted (IW) estimator. Their estimator improves upon the TWFE estimator by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
 
-One of the authors, [Liyang Sun](https://lsun20.github.io/) at MIT, wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. The basic syntax is below:
+One of the authors, [Liyang Sun](https://lsun20.github.io/) at MIT, wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package: `avar`. The basic syntax is below:
 ```stata
 eventstudyinteract y rel_time_list, \\\
   absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
