@@ -72,7 +72,7 @@ did_imputation Y id t Ei, fe(id t) horizons(#) pretrends(#)
 ```
 The `horizons` option tells Stata how many forward horizons of treatment effects we want to estimate, and the `pretrends` option tells Stata to perform a pre-trend testing for some periods. The post-treatment coefficients are reported as `tau0`, `tau1`, ...; the pre-trend coefficients are reported as `pre1`, `pre2`, .... In contrast with the aforementioned approaches, here the number of pre-trend coefficients does not affect the post-treatment effect estimates, which are always computed under the assumption of parallel trends and no anticipation.
 
-Furthermore, Borusyak, Borusyak, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
+Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
 
 ### To be continued...
 Potential candidate: [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001)
