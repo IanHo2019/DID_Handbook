@@ -106,4 +106,6 @@ Then we can apply the Bacon decomposition theorem to the TWFE DID model.
 ```stata
 bacondecomp asmrs post pcinc asmrh cases, ddetail
 ```
-It reports that there are 14 timing groups in the dataset, including a never-treated group and an always-treated group. The largest weight is assigned to comparison between always-treated group and timing groups.
+It reports that there are 14 timing groups in the dataset, including a never-treated group and an always-treated group. The largest weight is assigned to comparison between always-treated group and timing groups. A scatter plot is [here](./Figure/DID_Decomposition_Detail.pdf).
+
+### More examples are on the way...
