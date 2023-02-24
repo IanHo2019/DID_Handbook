@@ -76,3 +76,34 @@ Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/pa
 
 ### To be continued...
 Potential candidate: [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001).
+
+## Examples
+In this section, I will show how to use the estimators above in empirical analyses, especially by specific commands/packages in Stata.
+
+### The Impact of No-Fault Divorce Reforms on Female Suicide ([Stevenson & Wolfers, 2006](https://www.jstor.org/stable/25098790))
+The dataset can be loaded into Stata by running the following code:
+```stata
+use "http://pped.org/bacon_example.dta", clear
+```
+The panel data contain state-level information (in particular, no-fault divorce onset year and suicide mortality rate) on 49 states in the US from 1964 to 1996. They are originally used by [Stevenson & Wolfers (2006)](https://www.jstor.org/stable/25098790) to estimate the effect of no-fault (or unilateral) divorce on female suicide rate.
+
+Here, I run a static TWFE DID specification of female suicide on no-fault divorce reforms.
+$$y_{st} = \alpha_s + \gamma_t + \beta D_{st} + \Gamma X_{st} + e_{it}$$
+where
+ * $\alpha_s$ is a state fixed effect;
+ * $\gamma_t$ is a year fixed effect;
+ * $D_{st}$ is a treatment dummy equaling to 1 if $t$ is greater than or equal to the no-fault divorce onset year and 0 otherwise;
+ * $X_{st}$ are state-level control variables.
+
+In Stata, either `reghdfe` or `xtreg` command can be used to run this regression; I prefer `reghdfe` because it works faster and has more flexible options. The estimation results from both commands should be identical.
+```stata
+reghdfe asmrs post pcinc asmrh cases, absorb(stfips year)
+xtreg asmrs post pcinc asmrh cases i.year, fe
+```
+`asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.52 (with standard error of 1.10), which is significantly different from zero at 95% confidence level.
+
+Then we can apply the Bacon decomposition theorem to the TWFE DID model.
+```stata
+bacondecomp asmrs post pcinc asmrh cases, ddetail
+```
+It reports that there are 14 timing groups in the dataset, including a never-treated group and an always-treated group. The largest weight is assigned to comparison between always-treated group and timing groups.
