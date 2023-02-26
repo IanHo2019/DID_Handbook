@@ -63,7 +63,7 @@ egen clst = group(product year)
 gen Ei = year_des_duty
 
 
-local ylist = "value quantity m_quantity company_num"
+local ylist = "value quantity company_num m_quantity"
 foreach y in `ylist'{
 	quietly{
 		eststo reg_`y': did_imputation ln_`y' id year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
