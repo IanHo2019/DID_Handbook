@@ -108,4 +108,72 @@ bacondecomp asmrs post pcinc asmrh cases, ddetail
 ```
 It reports that there are 14 timing groups in the dataset, including a never-treated group and an always-treated group. The largest weight is assigned to comparison between always-treated group and timing groups. A scatter plot is [here](./Figure/DID_Decomposition_Detail.pdf).
 
+Complete coding for this example can be found [here](./Static_DID_and_Decomposition_(SW2006).do).
+
+### The Impact of Antidumping Duty on the China's Export to the US
+If a firm exports a product at a price lower than the price it normally sells in its domestic market, then we say this firm is dumping the product. This unfair foreign pricing behavior can adversely distort the business and economy in import markets. Considering the adverse effect, the WTO Anti-Dumping Agreement allows the governments to react to foreign dumping by taking some **antidumping (AD)** actions. The most typical AD action is imposing higher import duty on the specific product from the specific exporting country, with the hope of raising the unfairly low price to the normal price and thereby mitigating the injury to importing country.
+
+Here, I will employ a dynamic DID specification to estimate the dynamic effects of USA AD duty impositions on China's exporters in a decade from 2000 to 2009. [Bown & Crowley (2007)](https://doi.org/10.1016/j.jinteco.2006.09.005) call this effect "**trade destruction**" and estimate the static effect by running IV, FE, and GMM models with USA and Japanese data. Slides of literature review on this paper can be found [here](./Appendix/Literature_Review_BC2007.pdf).
+
+The dataset I will use is a product-year-level dataset merged from [Global Antidumping Database](https://www.chadpbown.com/global-antidumping-database/) and China Customs data (thanks to China Data Center at Tsingha University). Then dynamic DID specification I will run is as follows:
+$$\ln(Y_{h,t}) = \sum_{i=-2}^{3} \beta_i AD_{h,t+i}^{USA} + \gamma_1 \sum_{i<-2} AD_{h,t+i}^{USA} + \gamma_2 \sum_{i>3} AD_{h,t+i}^{USA} + \alpha_h + \alpha_t + \epsilon_{h,t}$$
+where
+ * $Y_{h,t}$ is the outcome variables (including export value, export quantity, number of exporters, and average export quantity) for product $h$ in year $t$.
+ * $AD_{h,t+i}^{USA}$ is treatment dummy, equal to 1 if product $h$ received an AD duty from the USA in year $t+i$.
+ * $\alpha_h$ is a product fixed effect and $\alpha_t$ is a year fixed effect.
+ * Standard errors are clustered at the product-year level.
+
+Information on the year of an AD duty imposition against a specific product (coded at 6-digit Harmonized System level) is stored in variable `year_des_duty`. I use this variable and `year` to construct a series of relative time dummies:
+```stata
+gen period_duty = year - year_des_duty
+
+gen Dn3 = (period_duty < -2)
+forvalues i = 2(-1)1 {
+	gen Dn`i' = (period_duty == -`i')
+}
+
+forvalues i = 0(1)3 {
+	gen D`i' = (period_duty == `i')
+}
+gen D4 = (period_duty >= 4) & (period_duty != .)
+```
+
+Then, it's time to run regressions! Coding for **classical dynamic DID** is:
+```stata
+local dep = "value quantity company_num m_quantity"
+foreach y in `dep'{
+ reghdfe ln_`y' Dn3 Dn2 D0-D4, absorb(product year) vce(cluster product#year)
+}
+```
+Traditionally, researchers use pre-treatment coefficients to test for pretrends: If the pre-treatment coefficients is not significantly different from 0, then they conclude that the parallel trends assumption hold. However, [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) have proved that this action has a serious shortcoming and need correction.
+
+Coding for **interaction-weighted estimation** of DID is:
+```stata
+gen first_union = year_des_duty
+gen never_union = (first_union == .)
+
+local dep = "value quantity company_num m_quantity"
+foreach y in `dep'{	
+	eventstudyinteract ln_`y' Dn3 Dn2 D0-D4, cohort(first_union) control_cohort(never_union) absorb(product year) vce(cluster product#year)
+}
+```
+We need to tell Stata which variable corresponds to the initial treatment timing of each unit. I name it `first_union`. This variable should be set to be missing for never treated units. In addition, we need to give Stata a binary variable that corresponds to the control cohort, which can be never-treated units or last-treated units. Here I use never-treated units as the control cohort, and I construct a variable `never_union` to indicate it.
+
+Coding for imputation estimation of DID is:
+```stata
+gen id = product
+egen clst = group(product year)
+gen Ei = year_des_duty
+
+local ylist = "value quantity company_num m_quantity"
+foreach y in `ylist'{
+	did_imputation ln_`y' id year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
+}
+```
+We need to give Stata a variable for unit-specific date of treatment, whose missing value represents the never-treated unit. I name it `Ei`, following the package documentation.
+
+Something noteworthy is that a package named `event_plot` was written for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/Imputation_DID_Trade_Destruction.pdf)) showing the dynamic estimated effects on four outcome variables. Regardless of estimation approaches, my results show persistent and negative effects on all outcome variables.
+
+Complete coding for this example can be found [here](./Dynamic_DID_(Sino-US_Trade).do).
+
 ### More examples are on the way...
