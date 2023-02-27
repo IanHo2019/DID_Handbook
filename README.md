@@ -85,15 +85,16 @@ The dataset can be loaded into Stata by running the following code:
 ```stata
 use "http://pped.org/bacon_example.dta", clear
 ```
-The panel data contain state-level information (in particular, no-fault divorce onset year and suicide mortality rate) on 49 states in the US from 1964 to 1996. They are originally used by [Stevenson & Wolfers (2006)](https://www.jstor.org/stable/25098790) to estimate the effect of no-fault (or unilateral) divorce on female suicide rate.
+The panel data contain state-level information (in particular, no-fault divorce onset year and suicide mortality rate) on 49 states (including Washington, D.C. but excluding Alaska and Hawaii) in the US from 1964 to 1996. They are originally used by [Stevenson & Wolfers (2006)](https://www.jstor.org/stable/25098790) to estimate the effect of no-fault (or unilateral) divorce on female suicide rate.
 
-Here, I run a static TWFE DID specification of female suicide on no-fault divorce reforms.
+Here, I run a static TWFE DID specification of female suicide on no-fault divorce reforms:
 $$y_{st} = \alpha_s + \gamma_t + \beta D_{st} + \Gamma X_{st} + e_{it}$$
 where
  * $\alpha_s$ is a state fixed effect;
  * $\gamma_t$ is a year fixed effect;
  * $D_{st}$ is a treatment dummy equaling to 1 if $t$ is greater than or equal to the no-fault divorce onset year and 0 otherwise;
  * $X_{st}$ are state-level control variables.
+ * The treatment group consists of the states adopting unilateral divorce laws, while the control group consists of the remaining states.
 
 In Stata, either `reghdfe` or `xtreg` command can be used to run this regression; I prefer `reghdfe` because it works faster and has more flexible options. The estimation results from both commands should be identical.
 ```stata
@@ -122,6 +123,7 @@ where
  * $AD_{h,t+i}^{USA}$ is treatment dummy, equal to 1 if product $h$ received an AD duty from the USA in year $t+i$.
  * $\alpha_h$ is a product fixed effect and $\alpha_t$ is a year fixed effect.
  * Standard errors are clustered at the product-year level.
+ * The treatment group is a set of products from China that received the USA AD duties, while the control group is a set of products from China that underwent the AD investigations but finally did not receive the AD duties. Note that I don't include those never-investigated products into control group. The reason is that AD investigations are *non-random*; the products under investigations always have lower export prices and higher export volumes than those without investigations. If I compare the products receiving AD duties against those without undergoing investigations, then my estimator is very likely to be biased.
 
 Information on the year of an AD duty imposition against a specific product (coded at 6-digit Harmonized System level) is stored in variable `year_des_duty`. I use this variable and `year` to construct a series of relative time dummies:
 ```stata
@@ -175,5 +177,3 @@ We need to give Stata a variable for unit-specific date of treatment, whose miss
 Something noteworthy is that a package named `event_plot` was written for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/Imputation_DID_Trade_Destruction.pdf)) showing the dynamic estimated effects on four outcome variables. Regardless of estimation approaches, my results show persistent and negative effects on all outcome variables.
 
 Complete coding for this example can be found [here](./Dynamic_DID_(Sino-US_Trade).do).
-
-### More examples are on the way...
