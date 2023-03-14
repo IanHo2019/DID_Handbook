@@ -42,6 +42,7 @@ bacondecomp Y D, ddtail
 ```
 `Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition.
 
+
 ## Dynamic DID
 Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once Sibal Yang posts a new problem set on Canvas, what is the effect of the problem set on students’ happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
 $$Y_{it} = \alpha_i + \gamma_t + \sum_{k \in \{-4, -3, -2, 0, 1, 2, 3, 4, 5\}} \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
@@ -49,8 +50,9 @@ Within dynamic specifications, researchers need to address the issue of multi-co
 
 In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians are trying to solve this problem and they are keep trying. In the following, I only cover several brand new (dynamic) DID estimators with their corresponding commands in Stata.
 
+
 ### Interaction-Weighted Estimator for DID
-[Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) proposes an interaction-weighted (IW) estimator. Their estimator improves upon the TWFE estimator by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
+[Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) propose an interaction-weighted (IW) estimator. Their estimator improves upon the TWFE estimator by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
 
 One of the authors, [Liyang Sun](https://lsun20.github.io/) at MIT, wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package: `avar`. The basic syntax is below:
 ```stata
@@ -61,8 +63,30 @@ Note that we must include a list of relative time indicators as we would have in
 
 Something sad is that this command is not well compatible with the `estout` package; I still don't find a good package/command to export the results from the IW DID regression.
 
+
+### Doubly Robust Estimator for DID
+[Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) pay a particular attention to the disaggregated causal parameter --- the average treatment effect for group $g$ at time $t$, where a "group" is defined by the time period when units are first treated. They name this parameter as "**group-time average treatment effect**" and propose three different types of DID estimators to estimate it:
+  * outcome regression (OR);
+  * inverse probability weighting (IPW);
+  * doubly robust (DR).
+
+For estimation, Callaway and Sant'Anna suggest we use the DR approach, because this approach only requires us to correctly specify either (but not necessarily both) the outcome evolution for the comparison group or the propensity score model.
+
+The two authors, with [Fernando Rios-Avila](https://www.levyinstitute.org/scholars/fernando-rios-avila) at Levy Economics Institute of Bard College, wrote a Stata package `csdid` to implement the DID estimator proposed in [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001). Internally, all $2 \times 2$ DID estimates are obtained using the `drdid` command; therefore, to run the `csdid`, we have to install two packages: `csdid` and `drdid`.
+
+The basic syntax is below:
+```stata
+csdid Y covar, ivar(id) time(t) gvar(group)
+```
+For running the specification, we need the `gvar` variable which equals the first treatment time for the treated, and 0 for the not treated. Note that this command allows us to include covariates into the regression; in some cases the parallel trends assumption holds potentially only after conditioning on observed covariates.
+
+The command has several built-in methods to estimate the coefficient(s); the default is `dripw`, i.e., the doubly robust DID estimator based on stabilized inverse probability weighting and ordinary least squares, from [Sant'Anna & Zhao (2020)](https://doi.org/10.1016/j.jeconom.2020.06.003). One can use the `method( )` option to change it to other available methods. In addition, by default, robust and asymptotic standard errors are estimated. However, other options are available, such as using a multiplicative wild bootstrap procedure by the `wboot` option. Enter `help csdid` in your Stata command window for learning more details.
+
+[Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) also provide some aggregation schemes to form more aggregated causal parameters. In Stata, we can produce the aggregated estimates by using the post-estimation `estat` or `csdid_estat` command. The second one is recommended if one uses a bootstrap procedure to estimate the standard errors.
+
+
 ### Imputation Estimator for DID
-[Borusyak, Jaravel & Spiess (2022, working paper)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) proposes a finite-sample efficient robust DID estimator using an imputation procedure. The imputation-based method is welcomed because
+[Borusyak, Jaravel & Spiess (2022, working paper)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) propose a finite-sample efficient robust DID estimator using an imputation procedure. The imputation-based method is welcomed because
   1. it is computationally efficient (it only requires estimating a simple TWFE model);
   1. the imputation easily links the parallel trends and no anticipation assumptions to the estimator.
 
@@ -75,7 +99,8 @@ The `horizons` option tells Stata how many forward horizons of treatment effects
 Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
 
 ### To be continued...
-Potential candidate: [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001).
+Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322).
+
 
 ## Examples
 In this section, I will show how to use the estimators above in empirical analyses, especially by specific commands/packages in Stata.
