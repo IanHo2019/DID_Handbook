@@ -65,7 +65,7 @@ Something sad is that this command is not well compatible with the `estout` pack
 
 
 ### Doubly Robust Estimator for DID
-[Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) pay a particular attention to the disaggregated causal parameter --- the average treatment effect for group $g$ at time $t$, where a "group" is defined by the time period when units are first treated. They name this parameter as "**group-time average treatment effect**" and propose three different types of DID estimators to estimate it:
+[Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) pay a particular attention to the disaggregated causal parameter --- the average treatment effect for group $g$ at time $t$, where a "group" is defined by the time period when units are first treated. They name this parameter as "**group-time average treatment effect**", denoted by $ATT(g,t)$, and propose three different types of DID estimators to estimate it:
   * outcome regression (OR);
   * inverse probability weighting (IPW);
   * doubly robust (DR).
@@ -186,6 +186,21 @@ foreach y in `dep'{
 ```
 We need to tell Stata which variable corresponds to the initial treatment timing of each unit. I name it `first_union`. This variable should be set to be missing for never treated units. In addition, we need to give Stata a binary variable that corresponds to the control cohort, which can be never-treated units or last-treated units. Here I use never-treated units as the control cohort, and I construct a variable `never_union` to indicate it.
 
+Coding for **doubly robust estimation** of DID is:
+```stata
+gen gvar = year_des_duty
+recode gvar (. = 0)
+
+local dep = "value quantity company_num m_quantity"
+foreach y in `dep'{	
+	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) method(dripw) wboot rseed(1)
+	csdid_estat event, window(-3 4) estore(cs_`y') wboot rseed(1)
+}
+```
+The `cs_did` command may show a very long output table in Stata results window (due to the combination explosion), so I add the `quietly` command before `csdid`. Besides, as in many applications, I care more about the heterogeneous effects at different points in time but not across different groups (instead of the group-time average treatment effect defined by [Callaway & Sant'Anna, 2021](https://doi.org/10.1016/j.jeconom.2020.12.001)); therefore, I use the `csdid_estat` to produce the aggregated estimates only at periods from -3 to 4. Now the output table in results window is shorter.
+
+Something noteworthy is that a package named `event_plot` was written for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/CS_DID_Trade_Destruction.pdf)) showing the dynamic effects on four outcome variables.
+
 Coding for imputation estimation of DID is:
 ```stata
 gen id = product
@@ -199,6 +214,6 @@ foreach y in `ylist'{
 ```
 We need to give Stata a variable for unit-specific date of treatment, whose missing value represents the never-treated unit. I name it `Ei`, following the package documentation.
 
-Something noteworthy is that a package named `event_plot` was written for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/Imputation_DID_Trade_Destruction.pdf)) showing the dynamic estimated effects on four outcome variables. Regardless of estimation approaches, my results show persistent and negative effects on all outcome variables.
+A four-panel figure presenting the dynamic effects estimated by the imputation approach can be found [here](./Figure/Imputation_DID_Trade_Destruction.pdf).
 
-Complete coding for this example can be found [here](./Dynamic_DID_(Sino-US_Trade).do).
+To summarize, regardless of estimation approaches, the results show persistent and negative effects of USA antidumping duty impositions on the four outcome variables. Complete coding for this example can be found [here](./Dynamic_DID_(Sino-US_Trade).do).
