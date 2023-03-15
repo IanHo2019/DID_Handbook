@@ -57,7 +57,7 @@ In this format of DID, an unbiased estimation becomes much more complicated than
 One of the authors, [Liyang Sun](https://lsun20.github.io/) at MIT, wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package: `avar`. The basic syntax is below:
 ```stata
 eventstudyinteract y rel_time_list, \\\
-  absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
+	absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
 ```
 Note that we must include a list of relative time indicators as we would have included in the classical dynamic DID regression.
 
@@ -169,7 +169,7 @@ Then, it's time to run regressions! Coding for **classical dynamic DID** is:
 ```stata
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{
- reghdfe ln_`y' Dn3 Dn2 D0-D4, absorb(product year) vce(cluster product#year)
+	reghdfe ln_`y' Dn3 Dn2 D0-D4, absorb(product year) vce(cluster product#year)
 }
 ```
 Traditionally, researchers use pre-treatment coefficients to test for pretrends: If the pre-treatment coefficients is not significantly different from 0, then they conclude that the parallel trends assumption hold. However, [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) have proved that this action has a serious shortcoming and need correction.
@@ -181,7 +181,8 @@ gen never_union = (first_union == .)
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
-	eventstudyinteract ln_`y' Dn3 Dn2 D0-D4, cohort(first_union) control_cohort(never_union) absorb(product year) vce(cluster product#year)
+	eventstudyinteract ln_`y' Dn3 Dn2 D0-D4, \\\
+		cohort(first_union) control_cohort(never_union) absorb(product year) vce(cluster product#year)
 }
 ```
 We need to tell Stata which variable corresponds to the initial treatment timing of each unit. I name it `first_union`. This variable should be set to be missing for never treated units. In addition, we need to give Stata a binary variable that corresponds to the control cohort, which can be never-treated units or last-treated units. Here I use never-treated units as the control cohort, and I construct a variable `never_union` to indicate it.
@@ -209,7 +210,8 @@ gen Ei = year_des_duty
 
 local ylist = "value quantity company_num m_quantity"
 foreach y in `ylist'{
-	did_imputation ln_`y' id year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
+	did_imputation ln_`y' id year Ei, \\\
+		fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
 }
 ```
 We need to give Stata a variable for unit-specific date of treatment, whose missing value represents the never-treated unit. I name it `Ei`, following the package documentation.
