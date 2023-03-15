@@ -182,7 +182,8 @@ gen never_union = (first_union == .)
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
 	eventstudyinteract ln_`y' Dn3 Dn2 D0-D4, \\\
-		cohort(first_union) control_cohort(never_union) absorb(product year) vce(cluster product#year)
+		cohort(first_union) control_cohort(never_union) \\\
+		absorb(product year) vce(cluster product#year)
 }
 ```
 We need to tell Stata which variable corresponds to the initial treatment timing of each unit. I name it `first_union`. This variable should be set to be missing for never treated units. In addition, we need to give Stata a binary variable that corresponds to the control cohort, which can be never-treated units or last-treated units. Here I use never-treated units as the control cohort, and I construct a variable `never_union` to indicate it.
