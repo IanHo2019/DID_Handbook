@@ -164,7 +164,7 @@ foreach y in `ylist'{
 		xlab(-2(1)3 4 "> 3", labsize(small)) ///
 		ylab(, angle(90) nogrid labsize(small)) ///
 		yline(0, lcolor(gs8) lpattern(dash)) ///
-		name(reg_`y', replace) ///
+		name(imp_`y', replace) ///
 	)
 }
 
