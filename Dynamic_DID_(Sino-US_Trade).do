@@ -45,6 +45,7 @@ estout reg*, keep(D*) ///
 	stats(N r2_a, nostar labels("Observations" "Adjusted R-Square") fmt("%9.0fc" 3))
 
 
+*************************************************************************
 **# Sun and Abraham (2021)
 * install eventstudyinteract avar
 gen first_union = year_des_duty
@@ -56,27 +57,83 @@ foreach y in `dep'{
 }
 
 
+*************************************************************************
+**# Callaway & Sant'Anna (2021)
+* install csdid drdid
+gen gvar = year_des_duty
+recode gvar (. = 0)
+
+local dep = "value quantity company_num m_quantity"
+foreach y in `dep'{	
+	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) method(dripw) wboot rseed(1)
+	csdid_estat event, window(-3 4) estore(cs_`y') wboot rseed(1)
+}
+
+* Visualization
+local ylist = "value quantity company_num m_quantity"
+foreach y in `ylist'{
+	if "`y'"=="value"{
+		local panel = "A)"
+		local title = "ln(Value)"
+	}
+	
+	if "`y'"=="quantity"{
+		local panel = "B)"
+		local title = "ln(Total Quantity)"
+	}
+	
+	if "`y'"=="company_num"{
+		local panel = "C)"
+		local title = "ln(Number of Exporters)"
+	}
+	
+	if "`y'"=="m_quantity"{
+		local panel = "D)"
+		local title = "ln(Mean Quantity)"
+	}
+	
+	event_plot cs_`y', default_look ///
+		stub_lag(Tp#) stub_lead(Tm#) together ///
+		graph_opt( ///
+			xtitle("Period") ytitle("ATT") ///
+			title("`panel' `title'", size(medlarge) position(11)) ///
+			xlab(-3(1)4, labsize(small)) ///
+			ylab(, angle(90) nogrid labsize(small)) ///
+			legend(lab(1 "Coefficient") lab(2 "95% CI")) ///
+			name(cs_`y', replace) ///
+		)
+}
+
+* install grc1leg: net install grc1leg.pkg, replace
+grc1leg cs_value cs_quantity cs_company_num cs_m_quantity, ///
+	legendfrom(cs_value) cols(2) ///
+	graphregion(fcolor(white) lcolor(white)) ///
+	name(cs_fig, replace)
+
+gr draw cs_fig, ysize(5) xsize(6.5)
+graph export "$figdir\CS_DID_Trade_Destruction.pdf", replace
+
+
+*************************************************************************
 **# Borusyak, Jaravel & Spiess (2022)
 * install did_imputation
 gen id = product
 egen clst = group(product year)
 gen Ei = year_des_duty
 
-
 local ylist = "value quantity company_num m_quantity"
 foreach y in `ylist'{
 	quietly{
-		eststo reg_`y': did_imputation ln_`y' id year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
+		eststo imp_`y': did_imputation ln_`y' id year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
 	}
 }
 
-estout reg*, ///
+estout imp*, ///
 	coll(none) cells(b(star fmt(3)) se(par fmt(3))) ///
 	starlevels(* .1 ** .05 *** .01) legend ///
 	stats(N r2_a, nostar labels("Observations" "Adjusted R-Square") fmt("%9.0fc" 3))
 
-
-**# Visualization
+* Visualization
 * install event_plot
 local ylist = "value quantity company_num m_quantity"
 foreach y in `ylist'{
@@ -100,7 +157,7 @@ foreach y in `ylist'{
 		local title = "ln(Mean Quantity)"
 	}
 	
-	event_plot reg_`y', default_look ///
+	event_plot imp_`y', default_look ///
 	graph_opt( ///
 		xtitle("Period") ytitle("Coefficient estimate") ///
 		title("`panel' `title'", size(medlarge) position(11)) ///
@@ -112,10 +169,10 @@ foreach y in `ylist'{
 }
 
 * install grc1leg: net install grc1leg.pkg, replace
-grc1leg reg_value reg_quantity reg_company_num reg_m_quantity, ///
-	legendfrom(reg_value) cols(2) ///
+grc1leg imp_value imp_quantity imp_company_num imp_m_quantity, ///
+	legendfrom(imp_value) cols(2) ///
 	graphregion(fcolor(white) lcolor(white)) ///
-	name(four_panel, replace)
+	name(imp_fig, replace)
 
-gr draw four_panel, ysize(5) xsize(6.5)
+gr draw imp_fig, ysize(5) xsize(6.5)
 graph export "$figdir\Imputation_DID_Trade_Destruction.pdf", replace
