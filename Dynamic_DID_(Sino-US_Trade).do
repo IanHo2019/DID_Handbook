@@ -1,7 +1,7 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
 * Institution: The University of Oklahoma
-* Date: Feb 26, 2023
+* Date: Mar 14, 2023
 
 clear all
 
