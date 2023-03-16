@@ -147,7 +147,7 @@ where
  * $Y_{h,t}$ is the outcome variables (including export value, export quantity, number of exporters, and average export quantity) for product $h$ in year $t$.
  * $AD_{h,t+i}^{USA}$ is treatment dummy, equal to 1 if product $h$ received an AD duty from the USA in year $t+i$.
  * $\alpha_h$ is a product fixed effect and $\alpha_t$ is a year fixed effect.
- * Standard errors are clustered at the product-year level.
+ * Standard errors are clustered at the product-year level, unless specified otherwise.
  * The treatment group is a set of products from China that received the USA AD duties, while the control group is a set of products from China that underwent the AD investigations but finally did not receive the AD duties. Note that I don't include those never-investigated products into control group. The reason is that AD investigations are *non-random*; the products under investigations always have lower export prices and higher export volumes than those without investigations. If I compare the products receiving AD duties against those without undergoing investigations, then my estimator is very likely to be biased.
 
 Information on the year of an AD duty imposition against a specific product (coded at 6-digit Harmonized System level) is stored in variable `year_des_duty`. I use this variable and `year` to construct a series of relative time dummies:
@@ -195,15 +195,16 @@ recode gvar (. = 0)
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
-	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) method(dripw) wboot rseed(1)
-	csdid_estat event, window(-3 4) estore(cs_`y') wboot rseed(1)
+	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) \\\
+		method(dripw) wboot(reps(10000)) rseed(1)
+	csdid_estat event, window(-3 4) estore(cs_`y') wboot(reps(10000)) rseed(1)
 }
 ```
-The `cs_did` command may show a very long output table in Stata results window (due to the combination explosion), so I add the `quietly` command before `csdid`. Besides, as in many applications, I care more about the heterogeneous effects at different points in time but not across different groups (instead of the group-time average treatment effect defined by [Callaway & Sant'Anna, 2021](https://doi.org/10.1016/j.jeconom.2020.12.001)); therefore, I use the `csdid_estat` to produce the aggregated estimates only at periods from -3 to 4. Now the output table in results window is shorter.
+The `cs_did` command may show a very long output table in Stata results window (due to the combination explosion), so I add the `quietly` command before `csdid`. Besides, as in many applications, I care more about the heterogeneous effects at different points in time but not across different groups (instead of the group-time average treatment effect defined by [Callaway & Sant'Anna, 2021](https://doi.org/10.1016/j.jeconom.2020.12.001)); therefore, I use the `csdid_estat` to produce the aggregated estimates only at periods from -3 to 4. Now the output table in results window is shorter. Also note that I use the `wboot` option to estimate wild bootstrap standard errors, with 10,000 repetitions.
 
 Something noteworthy is that a package named `event_plot` was written for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/CS_DID_Trade_Destruction.pdf)) showing the dynamic effects on four outcome variables.
 
-Coding for imputation estimation of DID is:
+Coding for **imputation estimation** of DID is:
 ```stata
 gen id = product
 egen clst = group(product year)
