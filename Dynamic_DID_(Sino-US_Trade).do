@@ -65,8 +65,8 @@ recode gvar (. = 0)
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
-	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) method(dripw) wboot rseed(1)
-	csdid_estat event, window(-3 4) estore(cs_`y') wboot rseed(1)
+	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) method(dripw) wboot(reps(10000)) rseed(1)
+	csdid_estat event, window(-3 4) estore(cs_`y') wboot(reps(10000)) rseed(1)
 }
 
 * Visualization
