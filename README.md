@@ -136,13 +136,14 @@ It reports that there are 14 timing groups in the dataset, including a never-tre
 
 Complete coding for this example can be found [here](./Static_DID_and_Decomposition_(SW2006).do).
 
+
 ### The Impact of Antidumping Duty on the China's Export to the US
 If a firm exports a product at a price lower than the price it normally sells in its domestic market, then we say this firm is dumping the product. This unfair foreign pricing behavior can adversely distort the business and economy in import markets. Considering the adverse effect, the WTO Anti-Dumping Agreement allows the governments to react to foreign dumping by taking some **antidumping (AD)** actions. The most typical AD action is imposing higher import duty on the specific product from the specific exporting country, with the hope of raising the unfairly low price to the normal price and thereby mitigating the injury to importing country.
 
 Here, I will employ a dynamic DID specification to estimate the dynamic effects of USA AD duty impositions on China's exporters in a decade from 2000 to 2009. [Bown & Crowley (2007)](https://doi.org/10.1016/j.jinteco.2006.09.005) call this effect "**trade destruction**" and estimate the static effect by running IV, FE, and GMM models with USA and Japanese data. Slides of literature review on this paper can be found [here](./Appendix/Literature_Review_BC2007.pdf).
 
 The dataset I will use is a product-year-level dataset merged from [Global Antidumping Database](https://www.chadpbown.com/global-antidumping-database/) and China Customs data (thanks to China Data Center at Tsingha University). Then dynamic DID specification I will run is as follows:
-$$\ln(Y_{h,t}) = \sum_{i=-2}^{3} \beta_i AD_{h,t+i}^{USA} + \gamma_1 \sum_{i<-2} AD_{h,t+i}^{USA} + \gamma_2 \sum_{i>3} AD_{h,t+i}^{USA} + \alpha_h + \alpha_t + \epsilon_{h,t}$$
+$$\ln(Y_{h,t}) = \sum_{i = -2, \ i \neq -1}^3 \beta_i AD_{h,t+i}^{USA} + \gamma_1 \sum_{i<-2} AD_{h,t+i}^{USA} + \gamma_2 \sum_{i>3} AD_{h,t+i}^{USA} + \alpha_h + \alpha_t + \epsilon_{h,t}$$
 where
  * $Y_{h,t}$ is the outcome variables (including export value, export quantity, number of exporters, and average export quantity) for product $h$ in year $t$.
  * $AD_{h,t+i}^{USA}$ is treatment dummy, equal to 1 if product $h$ received an AD duty from the USA in year $t+i$.
