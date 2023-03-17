@@ -45,10 +45,10 @@ bacondecomp Y D, ddtail
 
 ## Dynamic DID
 Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once Sibal Yang posts a new problem set on Canvas, what is the effect of the problem set on students’ happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
-$$Y_{it} = \alpha_i + \gamma_t + \sum_{k \in \{-4, -3, -2, 0, 1, 2, 3, 4, 5\}} \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
-Within dynamic specifications, researchers need to address the issue of multi-collinearity. The most common way to avoid the multi-collinearity is to exclude the treatment dummy for period -1 (the last period before the treatment) as I did above. Additionally, above I binned distant relative periods, which is also a common action in empirical research.
+$$Y_{it} = \alpha_i + \gamma_t + \sum_{k = -4, \ k \neq -1}^5 \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
+Within dynamic specifications, researchers need to address the issue of multi-collinearity. The most common way to avoid the multi-collinearity is to exclude the treatment dummy for period -1 (the last period before the treatment) as shown above. Additionally, above I binned distant relative periods, which is also a common action to address the imbalance issues.
 
-In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians are trying to solve this problem and they are keep trying. In the following, I only cover several brand new (dynamic) DID estimators with their corresponding commands in Stata.
+In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians have tried to solve this problem and they are still trying nowadays. In the following, I only cover several brand new (dynamic) DID estimators with their corresponding commands in Stata. Note that some of the following Stata packages are under development, so it is best to read their recent documentations before applying them to your research.
 
 
 ### Interaction-Weighted Estimator for DID
