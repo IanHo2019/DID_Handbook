@@ -1,7 +1,7 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
 * Institution: The University of Oklahoma
-* Date: Mar 14, 2023
+* Date: Mar 17, 2023
 
 clear all
 
@@ -99,7 +99,7 @@ foreach y in `ylist'{
 			title("`panel' `title'", size(medlarge) position(11)) ///
 			xlab(-3(1)4, labsize(small)) ///
 			ylab(, angle(90) nogrid labsize(small)) ///
-			legend(lab(1 "Coefficient") lab(2 "95% CI")) ///
+			legend(lab(1 "Coefficient") lab(2 "95% CI") size(*0.8)) ///
 			name(cs_`y', replace) ///
 		)
 }
@@ -158,17 +158,17 @@ foreach y in `ylist'{
 	}
 	
 	event_plot imp_`y', default_look ///
-	graph_opt( ///
-		xtitle("Period") ytitle("Coefficient estimate") ///
-		title("`panel' `title'", size(medlarge) position(11)) ///
-		xlab(-2(1)3 4 "> 3", labsize(small)) ///
-		ylab(, angle(90) nogrid labsize(small)) ///
-		yline(0, lcolor(gs8) lpattern(dash)) ///
-		name(imp_`y', replace) ///
-	)
+		graph_opt( ///
+			xtitle("Period") ytitle("Coefficient estimate") ///
+			title("`panel' `title'", size(medlarge) position(11)) ///
+			xlab(-2(1)3 4 "> 3", labsize(small)) ///
+			ylab(, angle(90) nogrid labsize(small)) ///
+			yline(0, lcolor(gs8) lpattern(dash)) ///
+			legend(size(*0.8)) ///
+			name(imp_`y', replace) ///
+		)
 }
 
-* install grc1leg: net install grc1leg.pkg, replace
 grc1leg imp_value imp_quantity imp_company_num imp_m_quantity, ///
 	legendfrom(imp_value) cols(2) ///
 	graphregion(fcolor(white) lcolor(white)) ///
