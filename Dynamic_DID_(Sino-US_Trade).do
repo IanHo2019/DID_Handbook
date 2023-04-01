@@ -106,7 +106,7 @@ foreach y in `dep'{
 			legend(order(1 "Coefficient" 2 "95% CI") size(*0.8)) ///
 			name(sa_`y', replace) ///
 			graphregion(color(white)) ///
-	)
+		)
 }
 
 * install grc1leg: net install grc1leg.pkg, replace
