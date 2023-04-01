@@ -1,7 +1,7 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
 * Institution: The University of Oklahoma
-* Date: Mar 17, 2023
+* Date: Apr 1, 2023
 
 clear all
 
@@ -53,8 +53,70 @@ gen never_union = (first_union == .)
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
+	* Regression
 	eventstudyinteract ln_`y' Dn3 Dn2 D0-D4, cohort(first_union) control_cohort(never_union) absorb(product year) vce(cluster product#year)
+	
+	* Visualization
+	if "`y'"=="value"{
+		local panel = "A)"
+		local title = "ln(Value)"
+	}
+	
+	if "`y'"=="quantity"{
+		local panel = "B)"
+		local title = "ln(Total Quantity)"
+	}
+	
+	if "`y'"=="company_num"{
+		local panel = "C)"
+		local title = "ln(Number of Exporters)"
+	}
+	
+	if "`y'"=="m_quantity"{
+		local panel = "D)"
+		local title = "ln(Mean Quantity)"
+	}
+	
+	forvalue i=1/7 {
+	local m_`i' = e(b_iw)[1,`i']
+	local v_`i' = e(V_iw)[`i',`i']
 }
+
+	matrix input matb_sa= (`m_1',`m_2',0,`m_3',`m_4',`m_5',`m_6',`m_7')
+	mat colnames matb_sa= ld3 ld2 ld1 lg0 lg1 lg2 lg3 lg4
+
+	matrix input mats_sa= (`v_1',`v_2',0,`v_3',`v_4',`v_5',`v_6',`v_7')
+	mat colnames mats_sa= ld3 ld2 ld1 lg0 lg1 lg2 lg3 lg4
+
+	event_plot matb_sa#mats_sa, ///
+		stub_lag(lg#) stub_lead(ld#) ///
+		ciplottype(rcap) plottype(scatter) ///
+		lag_opt(msymbol(D) mcolor(black) msize(small)) ///
+		lead_opt(msymbol(D) mcolor(black) msize(small)) ///
+		lag_ci_opt(lcolor(black) lwidth(medthin)) ///
+		lead_ci_opt(lcolor(black) lwidth(medthin)) ///
+		graph_opt( ///
+			title("`panel' `title'", size(medlarge) position(11)) ///
+			xtitle("Period", height(5)) xsize(5) ysize(4) ///
+			ytitle("Coefficient", height(5)) ///
+			xline(0, lpattern(dash) lcolor(gs12) lwidth(thin)) ///
+			yline(0, lpattern(solid) lcolor(gs12) lwidth(thin)) ///
+			xlabel(-3 "< -2" -2(1)3 4 "> 3", labsize(small)) ///
+			ylabel(, labsize(small)) ///
+			legend(order(1 "Coefficient" 2 "95% CI") size(*0.8)) ///
+			name(sa_`y', replace) ///
+			graphregion(color(white)) ///
+	)
+}
+
+* install grc1leg: net install grc1leg.pkg, replace
+grc1leg sa_value sa_quantity sa_company_num sa_m_quantity, ///
+	legendfrom(sa_value) cols(2) ///
+	graphregion(fcolor(white) lcolor(white)) ///
+	name(sa_fig, replace)
+
+gr draw sa_fig, ysize(5) xsize(6.5)
+graph export "$figdir\SA_DID_Trade_Destruction.pdf", replace
 
 
 *************************************************************************
@@ -104,7 +166,6 @@ foreach y in `ylist'{
 		)
 }
 
-* install grc1leg: net install grc1leg.pkg, replace
 grc1leg cs_value cs_quantity cs_company_num cs_m_quantity, ///
 	legendfrom(cs_value) cols(2) ///
 	graphregion(fcolor(white) lcolor(white)) ///
