@@ -29,6 +29,7 @@ This format of DID involves only two time periods and two groups; that's why I c
 
 Before 2017, many researchers naively believe that the TWFE DID can be easily generalized to include more time periods and more groups. Unfortunately, it is not easy! It is definitely not easy, as shown in the following.
 
+
 ## Bacon Decomposition for Static DID
 First, what is static DID? **Static DID specifications** estimate a single treatment effect that is time invariant. That is, we only get one beta by running a static DID specification, and we use the one beta to summarize the treatment effect on the moment when the policy is implemented. The classical DID is exactly a static DID.
 
@@ -61,7 +62,7 @@ eventstudyinteract y rel_time_list, \\\
 ```
 Note that we must include a list of relative time indicators as we would have included in the classical dynamic DID regression.
 
-Something sad is that this command is not well compatible with the `estout` package; I still don't find a good package/command to export the results from the IW DID regression.
+Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and deal with the matrix.
 
 
 ### Doubly Robust Estimator for DID
@@ -189,6 +190,8 @@ foreach y in `dep'{
 ```
 We need to tell Stata which variable corresponds to the initial treatment timing of each unit. I name it `first_union`. This variable should be set to be missing for never treated units. In addition, we need to give Stata a binary variable that corresponds to the control cohort, which can be never-treated units or last-treated units. Here I use never-treated units as the control cohort, and I construct a variable `never_union` to indicate it.
 
+Something noteworthy is that a package named `event_plot` was written by [Kirill Borusyak](https://sites.google.com/view/borusyak/home) for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/SA_DID_Trade_Destruction.pdf)) showing the dynamic effects on the four outcome variables. For plotting, I usually customize the plot type, but actually you can save a lot of time by using the default type (by using the `default_look` option) if your requirement for visualization is not as high as mine.
+
 Coding for **doubly robust estimation** of DID is:
 ```stata
 gen gvar = year_des_duty
@@ -203,7 +206,7 @@ foreach y in `dep'{
 ```
 The `cs_did` command may show a very long output table in Stata results window (due to the combination explosion), so I add the `quietly` command before `csdid`. Besides, as in many applications, I care more about the heterogeneous effects at different points in time but not across different groups (instead of the group-time average treatment effect defined by [Callaway & Sant'Anna, 2021](https://doi.org/10.1016/j.jeconom.2020.12.001)); therefore, I use the `csdid_estat` to produce the aggregated estimates only at periods from -3 to 4. Now the output table in results window is shorter. Also note that I use the `wboot` option to estimate wild bootstrap standard errors, with 10,000 repetitions.
 
-Something noteworthy is that a package named `event_plot` was written for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/CS_DID_Trade_Destruction.pdf)) showing the dynamic effects on four outcome variables.
+As before, I use the `event_plot` command to create a four-panel figure (see [here](./Figure/CS_DID_Trade_Destruction.pdf)) showing the dynamic effects. This time, I use the `default_look` option to save my time; in addition, I use the `together` option to make the leads and lags shown as one continuous curve.
 
 Coding for **imputation estimation** of DID is:
 ```stata
@@ -219,6 +222,6 @@ foreach y in `ylist'{
 ```
 We need to give Stata a variable for unit-specific date of treatment, whose missing value represents the never-treated unit. I name it `Ei`, following the package documentation.
 
-A four-panel figure presenting the dynamic effects estimated by the imputation approach can be found [here](./Figure/Imputation_DID_Trade_Destruction.pdf).
+A four-panel figure presenting the dynamic effects estimated by the imputation approach can be found [here](./Figure/Imputation_DID_Trade_Destruction.pdf). This time, I use the `default_look` option but don't use the `together` option --- this is why the leads and lags are shown as two separate curves in different colors.
 
 To summarize, regardless of estimation approaches, the results show persistent and negative effects of USA antidumping duty impositions on the four outcome variables. Complete coding for this example can be found [here](./Dynamic_DID_(Sino-US_Trade).do).
