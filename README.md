@@ -62,7 +62,7 @@ eventstudyinteract y rel_time_list, \\\
 ```
 Note that we must include a list of relative time indicators as we would have included in the classical dynamic DID regression.
 
-Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and deal with the matrix.
+Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and then deal with the matrix.
 
 
 ### Doubly Robust Estimator for DID
