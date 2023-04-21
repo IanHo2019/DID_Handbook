@@ -41,7 +41,7 @@ To do the Bacon decomposition in Stata, please install the `bacondecomp` package
 ```stata
 bacondecomp Y D, ddtail
 ```
-`Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition.
+`Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition. Something sad is that this command can work well only in the cases where we have strongly balanced panel data.
 
 
 ## Dynamic DID
@@ -100,7 +100,7 @@ The `horizons` option tells Stata how many forward horizons of treatment effects
 Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
 
 ### To be continued...
-Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322).
+Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) and [Arkhangelsky et al. (2021)](https://doi.org/10.1257/aer.20190159).
 
 
 ## Examples
