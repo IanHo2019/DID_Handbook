@@ -78,9 +78,9 @@ foreach y in `dep'{
 	}
 	
 	forvalue i=1/7 {
-	local m_`i' = e(b_iw)[1,`i']
-	local v_`i' = e(V_iw)[`i',`i']
-}
+		local m_`i' = e(b_iw)[1,`i']
+		local v_`i' = e(V_iw)[`i',`i']
+	}
 
 	matrix input matb_sa= (`m_1',`m_2',0,`m_3',`m_4',`m_5',`m_6',`m_7')
 	mat colnames matb_sa= ld3 ld2 ld1 lg0 lg1 lg2 lg3 lg4
@@ -130,6 +130,11 @@ foreach y in `dep'{
 	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) method(dripw) wboot(reps(10000)) rseed(1)
 	csdid_estat event, window(-3 4) estore(cs_`y') wboot(reps(10000)) rseed(1)
 }
+
+estout cs_*, keep(T*) ///
+	coll(none) cells(b(star fmt(3)) se(par fmt(3))) ///
+	starlevels(* .1 ** .05 *** .01) legend ///
+	stats(N r2_a, nostar labels("Observations" "Adjusted R-Square") fmt("%9.0fc" 3))
 
 * Visualization
 local ylist = "value quantity company_num m_quantity"
