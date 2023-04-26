@@ -25,9 +25,9 @@ reghdfe Y D, absorb(id t)
 ```
 The `absorb` option is used to specify the fixed effects.
 
-This format of DID involves only two time periods and two groups; that's why I call it canonical, classic, and textbook format. *Canonical* means "standard": this is the original and simplest one showing the key rationale behind the DID; *classical* means "traditional": it has been established for a long time, and sadly it becomes gradually outdated in modern applications; *textbook* means... it has been introduced in many textbooks, such as Jeffrey Wooldrige's *[Econometric Analysis of Cross Section and Panel Data](https://mitpress.mit.edu/9780262232586/econometric-analysis-of-cross-section-and-panel-data/)* (2010) and Bruce Hansen's *[Econometrics](https://press.princeton.edu/books/hardcover/9780691235899/econometrics)* (2022).
+This format of DID involves only two time periods and two groups; that's why I call it canonical, classical, and textbook format. *Canonical* means "standard": this is the original and simplest one showing the key rationale behind the DID; *classical* means "traditional": it has been established for a long time, and sadly it becomes gradually outdated in modern applications; *textbook* means... it has been introduced in many textbooks, such as Jeffrey Wooldrige's *[Econometric Analysis of Cross Section and Panel Data](https://mitpress.mit.edu/9780262232586/econometric-analysis-of-cross-section-and-panel-data/)* (2010) and Bruce Hansen's *[Econometrics](https://press.princeton.edu/books/hardcover/9780691235899/econometrics)* (2022). The TWFE DID can be generalized to multi-period multi-unit cases, only if those treated units get treated in the same period. This kind of treatment is sometimes called **block treatment**.
 
-Before 2017, many researchers naively believe that the TWFE DID can be easily generalized to include more time periods and more groups. Unfortunately, it is not easy! It is definitely not easy, as shown in the following.
+Before 2017, many researchers naively believed that the TWFE DID could also be easily generalized to cases where units get treated at different periods (i.e., **staggered treatment**). Unfortunately, it is not easy! It is definitely not easy, as described in the following.
 
 
 ## Bacon Decomposition for Static DID
@@ -106,8 +106,8 @@ Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jsto
 ## Examples
 In this section, I will show how to use the estimators above in empirical analyses, especially by specific commands/packages in Stata.
 
-### The Impact of No-Fault Divorce Reforms on Female Suicide ([Stevenson & Wolfers, 2006](https://www.jstor.org/stable/25098790))
-The dataset can be loaded into Stata by running the following code:
+### Bacon Decomposition as a Diagnostic Tool
+The dataset to be used can be loaded into Stata by running the following code:
 ```stata
 use "http://pped.org/bacon_example.dta", clear
 ```
@@ -138,7 +138,7 @@ It reports that there are 14 timing groups in the dataset, including a never-tre
 Complete coding for this example can be found [here](./Static_DID_and_Decomposition_(SW2006).do).
 
 
-### The Impact of Antidumping Duty on the China's Export to the US
+### Dynamic DID with Staggered Treatment
 If a firm exports a product at a price lower than the price it normally sells in its domestic market, then we say this firm is dumping the product. This unfair foreign pricing behavior can adversely distort the business and economy in import markets. Considering the adverse effect, the WTO Anti-Dumping Agreement allows the governments to react to foreign dumping by taking some **antidumping (AD)** actions. The most typical AD action is imposing higher import duty on the specific product from the specific exporting country, with the hope of raising the unfairly low price to the normal price and thereby mitigating the injury to importing country.
 
 Here, I will employ a dynamic DID specification to estimate the dynamic effects of USA AD duty impositions on China's exporters in a decade from 2000 to 2009. [Bown & Crowley (2007)](https://doi.org/10.1016/j.jinteco.2006.09.005) call this effect "**trade destruction**" and estimate the static effect by running IV, FE, and GMM models with USA and Japanese data. Slides of literature review on this paper can be found [here](./Appendix/Literature_Review_BC2007.pdf).
