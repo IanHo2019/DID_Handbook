@@ -44,6 +44,26 @@ bacondecomp Y D, ddtail
 `Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition. Something sad is that this command can work well only in the cases where we have strongly balanced panel data.
 
 
+## Synthetic DID for Balanced Panel
+[Arkhangelsky et al. (2022)](https://doi.org/10.1257/aer.20190159) propose a method, **synthetic difference in differences (SDID)**, which combines attractive features of both DID and synthetic control (SC) methods.
+  * Like DID, SDID allows for a constant difference between treatment and controls over all pretreatment periods.
+  * Like SC, SDID reweights and matches pre-exposure trends to relax the conventional "parallel trend" assumption.
+
+The key step in SDID is to find **unit weights** ($\omega_i$) that ensure that the comparison is made between treated units and controls which approximately follow parallel trends prior to the treatments and find **time weights** ($\lambda_t$) that draw higher weights from pre-treatment periods which are more similar to post-treatment periods. By applying these weights to canonical DID (which simply assigns the equal weights to all groups and periods), we can obtain a consistent estimate for the causal effect of treatment. Fortunately, this method can be applied to cases with staggered treatments. Unfortunately, this method cannot be used in case of **unbalanced panel data**, and it does not work to estimate dynamic effects.
+
+SDID can be implemented in Stata by the `sdid` package (written by [Damian Clarke](https://www.damianclarke.net/) at University of Exeter and [Daniel Pailañir](https://daniel-pailanir.github.io/) at Universidad de Chile). The basic syntax is
+```stata
+sdid depvar groupvar timevar treatment, vce(vcetype)
+```
+where
+  * `depvar` is the dependent variable;
+  * `groupvar` is the variable indicating unit, and `timevar` is the variable indicating time periods;
+  * `treatment` indicates a unit that is treated at/after a specific time period.
+  * `vce(vcetype)` is a required option specifying what methods used for estimating variance. The available inference methods include `bootstrap`, `jackknife`, `placebo`, and `noinference`. If only one unit is treated, then bootstrap and jackknife methods cannot be used. For using placebo method, we need at least one more control unit than treated unit.
+
+Something noteworthy is that we can use the `graph` and `g1on` options to create figures (as Figure 1 in [Arkhangelsky et al., 2022](https://doi.org/10.1257/aer.20190159)) displaying unit weights (in scatter plot), time weights (in area plot), and outcome trends (in line plot).
+
+
 ## Dynamic DID
 Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once Sibal Yang posts a new problem set on Canvas, what is the effect of the problem set on students’ happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
 $$Y_{it} = \alpha_i + \gamma_t + \sum_{k = -4, \ k \neq -1}^5 \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
