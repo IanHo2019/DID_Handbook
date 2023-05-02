@@ -19,7 +19,7 @@ Under **treatment effect homogeneity** and under the **parallel trends assumptio
 
 Note that here we only consider the **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers think that DID can be easily applied to non-absorbing treatment; I don't think so, especially when researchers try to estimate the dynamic effects. 
 
-The TWFE regression can be easily run in Stata by using command `xtreg` or `reghdfe`. To use the latter command, we have to install `reghdfe` and `ftools` packages. The basic syntax is below:
+The TWFE regression can be easily run in Stata by using command `xtdidregress`, `xtreg`, `areg`, or `reghdfe`. To use the `reghdfe` command, we have to install `reghdfe` and `ftools` packages. The basic syntax is below:
 ```stata
 reghdfe Y D, absorb(id t)
 ```
@@ -126,6 +126,22 @@ Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jsto
 ## Examples
 In this section, I will show how to use the estimators above in empirical analyses, especially by specific commands/packages in Stata.
 
+### TWFE versus SDID
+Here I will use three real-world datasets to show how to run TWFE DID regressions. If available, I will also show the coding for running SDID and then make a comparison.
+
+The data I will use are from three papers:
+  * "OW05_prop99.dta" is from Orzechowski & Walker (2005), and you can get the recent version from [here](https://chronicdata.cdc.gov/Policy/The-Tax-Burden-on-Tobacco-1970-2019/7nwe-3aj9). [Abadie et al. (2010)](https://doi.org/10.1198/jasa.2009.ap08746) and [Arkhangelsky et al. (2021)](https://doi.org/10.1257/aer.20190159) use the data to estimate the impact of Proposition 99 (increasing taxes on cigarettes) on sales of cigarettes in packs per capita in California. Note that this is a block treatment case.
+  * "BCGV22_gender_quota.dta" is from [Bhalotra et al. (2022)](https://doi.org/10.1162/rest_a_01031). They use the data to estimate the impact of parliamentary gender quotas (reserving seats for women in parliament) on rates of women in parliament. Note that this is a staggered treatment case.
+  * "SZ18_state_taxes.dta" is from [Serrato & Zidar (2018)](https://doi.org/10.1016/j.jpubeco.2018.09.006). They use the data to estimate the impact of state corporate tax cut/hike on tax revenue and economic activities. Note that this is a staggered treatment case; however, Serrato & Zidar (2018) use a dynamic standard DID specification (i.e., without solving the problem of negative weighting) so their results may be biased. Also note that unfortunately the `sdid` command cannot run a dynamic specification so we cannot use SDID to update Serrato & Zidar (2018)'s results.
+
+The regression commands I will use include
+  * `xtdidregress`, a built-in Stata command for running DID regression on panel data. After using it, we can use `estat` to create a trends plot and do some basic tests.
+  * `xtreg`, `areg`, and `reghdfe` are originally written for running fixed effects models, but can also be easily applied to running DID regressions.
+  * `sdid`, an external command for running SDID. Through the `method( )` option, we can also use it to run standard DID and synthetic control specifications.
+
+The complete coding for running regressions on the three datasets can be found [here](./TWFE_vs_SDID.do).
+
+
 ### Bacon Decomposition as a Diagnostic Tool
 The dataset to be used can be loaded into Stata by running the following code:
 ```stata
@@ -133,7 +149,7 @@ use "http://pped.org/bacon_example.dta", clear
 ```
 The panel data contain state-level information (in particular, no-fault divorce onset year and suicide mortality rate) on 49 states (including Washington, D.C. but excluding Alaska and Hawaii) in the US from 1964 to 1996. They are originally used by [Stevenson & Wolfers (2006)](https://www.jstor.org/stable/25098790) to estimate the effect of no-fault (or unilateral) divorce on female suicide rate.
 
-Here, I run a static TWFE DID specification of female suicide on no-fault divorce reforms:
+Here, I run a static TWFE DID specification of female suicide (a staggered treatment) on no-fault divorce reforms:
 $$y_{st} = \alpha_s + \gamma_t + \beta D_{st} + \Gamma X_{st} + e_{it}$$
 where
  * $\alpha_s$ is a state fixed effect;
@@ -142,10 +158,11 @@ where
  * $X_{st}$ are state-level control variables.
  * The treatment group consists of the states adopting unilateral divorce laws, while the control group consists of the remaining states.
 
-In Stata, either `reghdfe` or `xtreg` command can be used to run this regression; I prefer `reghdfe` because it works faster and has more flexible options. The estimation results from both commands should be identical.
+In Stata, `reghdfe`, `xtreg`, or `areg` can be used to run this regression; I prefer `reghdfe` because it works faster and has more flexible options. The estimation results from both commands should be identical.
 ```stata
 reghdfe asmrs post pcinc asmrh cases, absorb(stfips year)
 xtreg asmrs post pcinc asmrh cases i.year, fe
+areg asmrs post pcinc asmrh cases i.year, absorb(stfips)
 ```
 `asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.52 (with standard error of 1.10), which is significantly different from zero at 95% confidence level.
 
@@ -164,10 +181,10 @@ If a firm exports a product at a price lower than the price it normally sells in
 Here, I will employ a dynamic DID specification to estimate the dynamic effects of USA AD duty impositions on China's exporters in a decade from 2000 to 2009. [Bown & Crowley (2007)](https://doi.org/10.1016/j.jinteco.2006.09.005) call this effect "**trade destruction**" and estimate the static effect by running IV, FE, and GMM models with USA and Japanese data. Slides of literature review on this paper can be found [here](./Appendix/Literature_Review_BC2007.pdf).
 
 The dataset I will use is a product-year-level dataset merged from [Global Antidumping Database](https://www.chadpbown.com/global-antidumping-database/) and China Customs data (thanks to China Data Center at Tsingha University). Then dynamic DID specification I will run is as follows:
-$$\ln(Y_{h,t}) = \sum_{i = -2, \ i \neq -1}^3 \beta_i AD_{h,t+i}^{USA} + \gamma_1 \sum_{i<-2} AD_{h,t+i}^{USA} + \gamma_2 \sum_{i>3} AD_{h,t+i}^{USA} + \alpha_h + \alpha_t + \epsilon_{h,t}$$
+$$\ln(Y_{h,t}) = \sum_{i = -2, \ i \neq -1}^3 \beta_i AD_{h,t-i}^{USA} + \gamma_1 \sum_{i<-2} AD_{h,t-i}^{USA} + \gamma_2 \sum_{i>3} AD_{h,t-i}^{USA} + \alpha_h + \alpha_t + \epsilon_{h,t}$$
 where
  * $Y_{h,t}$ is the outcome variables (including export value, export quantity, number of exporters, and average export quantity) for product $h$ in year $t$.
- * $AD_{h,t+i}^{USA}$ is treatment dummy, equal to 1 if product $h$ received an AD duty from the USA in year $t+i$.
+ * $AD_{h,t-i}^{USA}$ is treatment dummy, equal to 1 if product $h$ received an AD duty from the USA in year $t-i$.
  * $\alpha_h$ is a product fixed effect and $\alpha_t$ is a year fixed effect.
  * Standard errors are clustered at the product-year level, unless specified otherwise.
  * The treatment group is a set of products from China that received the USA AD duties, while the control group is a set of products from China that underwent the AD investigations but finally did not receive the AD duties. Note that I don't include those never-investigated products into control group. The reason is that AD investigations are *non-random*; the products under investigations always have lower export prices and higher export volumes than those without investigations. If I compare the products receiving AD duties against those without undergoing investigations, then my estimator is very likely to be biased.
