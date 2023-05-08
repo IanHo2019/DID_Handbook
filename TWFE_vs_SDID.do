@@ -33,6 +33,7 @@ xtdidregress (packspercapita) (treated), group(state_code) time(year) vce(cluste
 estat trendplots	// visualization
 estat ptrends		// parallel-trends test
 estat granger		// anticipation test
+estat grangerplot	// time-specific treatment effects
 
 eststo twfe1: qui xtreg packspercapita treated i.year, fe cluster(state_code)
 
@@ -127,7 +128,7 @@ eststo stagg1: sdid womparl country year quota, vce(bootstrap) seed(3) ///
 	)
 
 ereturn list
-matrix list e(tau)		// adoption-period specific estimate
+matrix list e(tau)	// adoption-period specific estimate
 matrix list e(lambda)
 matrix list e(omega)
 matrix list e(adoption)	// different adoption years
