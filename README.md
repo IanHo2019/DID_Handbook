@@ -5,6 +5,8 @@ Comments on better coding or error correction are welcomed. **Contact:** [ianhe2
 
 Before starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my PhD colleagues [Mieon Seong](https://www.youtube.com/@user-es5rt7yi1s), [Ningjing Gao](https://github.com/gao0012), and JaeSeok Oh for their persistent support.
 
+---
+
 ## Canonical, Classical, and Textbook DID
 Difference in differences, as the name implies, involves comparisons between two groups across two periods. The first difference is between groups and the second difference is always between time. Those units in a group that becomes treated after the treatment time are referred to as the **treated group**. The other units are referred to as the **control group**. DID typically focuses on identifying and estimating the **average treatment effect on the treated (ATT)**; that is, it measures the average effect of the treatment on those who switch from being untreated to being treated. The dominant approach to implementing DID specifications in empirical research is to run **two-way fixed effects (TWFE)** regressions:
 $$Y_{it} = \theta_t + \eta_i + \alpha D_{it} + v_{it}$$
@@ -29,6 +31,7 @@ This format of DID involves only two time periods and two groups; that's why I c
 
 Before 2017, many researchers naively believed that the TWFE DID could also be easily generalized to cases where units get treated at different periods (i.e., **staggered treatment**). Unfortunately, it is not easy! It is definitely not easy, as described in the following.
 
+---
 
 ## Bacon Decomposition for Static DID
 First, what is static DID? **Static DID specifications** estimate a single treatment effect that is time invariant. That is, we only get one beta by running a static DID specification, and we use one coefficient to summarize the treatment effect since the policy is implemented. The classical DID is exactly a static DID.
@@ -45,6 +48,7 @@ bacondecomp Y D, ddtail
 
 Stata 18 (released on Apr 25, 2023) introduces a new post-estimation command, `estat bdecomp`, for performing a Bacon decomposition. It can be used after the `didregress` or `xtdidregress` command, and a plot can be easily created by adding the `graph` option.
 
+---
 
 ## Synthetic DID for Balanced Panel
 [Arkhangelsky et al. (2022)](https://doi.org/10.1257/aer.20190159) propose a method, **synthetic difference in differences (SDID)**, which combines attractive features of both DID and synthetic control (SC) methods.
@@ -65,6 +69,7 @@ where
 
 Something noteworthy is that we can use the `graph` and `g1on` options to create figures (as Figure 1 in [Arkhangelsky et al., 2022](https://doi.org/10.1257/aer.20190159)) displaying unit weights (in scatter plot), time weights (in area plot), and outcome trends (in line plot).
 
+---
 
 ## Dynamic DID
 Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once Sibal Yang posts a new problem set on Canvas, what is the effect of the problem set on students’ happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
@@ -84,7 +89,7 @@ eventstudyinteract y rel_time_list, \\\
 ```
 Note that we must include a list of relative time indicators as we would have included in the classical dynamic DID regression.
 
-Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and then deal with the matrix. See my coding example [here](./Dynamic_DID_(SA_2021).do).
+Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and then deal with the matrix. See my coding example [here](./Dynamic_DID_(SA2021).do).
 
 
 ### Doubly Robust Estimator for DID
@@ -124,6 +129,7 @@ Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/pa
 ### To be continued...
 Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) and [Dube et al. (2023)](https://doi.org/10.3386/w31184).
 
+---
 
 ## Examples
 In this section, I will show how to use the estimators above in empirical analyses, especially by specific commands/packages in Stata.
