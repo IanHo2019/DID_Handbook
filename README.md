@@ -161,19 +161,25 @@ where
  * $X_{st}$ are state-level control variables.
  * The treatment group consists of the states adopting unilateral divorce laws, while the control group consists of the remaining states.
 
-In Stata, `reghdfe`, `xtreg`, or `areg` can be used to run this regression; I prefer `reghdfe` because it works faster and has more flexible options. The estimation results from both commands should be identical.
+In Stata, `xtdidregress`, `xtreg`, `areg`, or `reghdfe` can be used to run this regression; I prefer `reghdfe` because it works faster and has more flexible options. The estimated coefficients from all these commands should be identical (standard errors and R-squared are different due to different algorithms).
 ```stata
-reghdfe asmrs post pcinc asmrh cases, absorb(stfips year)
-xtreg asmrs post pcinc asmrh cases i.year, fe
-areg asmrs post pcinc asmrh cases i.year, absorb(stfips)
+xtdidregress (asmrs pcinc asmrh cases) (post), group(stfips) time(year) vce(cluster stfips)
+xtreg asmrs post pcinc asmrh cases i.year, fe vce(cluster stfips)
+areg asmrs post pcinc asmrh cases i.year, absorb(stfips) vce(cluster stfips)
+reghdfe asmrs post pcinc asmrh cases, absorb(stfips year) cluster(stfips)
 ```
-`asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.52 (with standard error of 1.10), which is significantly different from zero at 95% confidence level.
+`asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.516 (with standard error of 2.283), which is significantly different from zero at 95% confidence level.
 
 Then we can apply the Bacon decomposition theorem to the TWFE DID model.
 ```stata
 bacondecomp asmrs post pcinc asmrh cases, ddetail
 ```
-It reports that there are 14 timing groups in the dataset, including a never-treated group and an always-treated group. The largest weight is assigned to comparison between always-treated group and timing groups. A scatter plot is [here](./Figure/DID_Decomposition_Detail.pdf).
+It reports that there are 14 timing groups in the dataset, including a never-treated group and an always-treated group. The largest weight is assigned to comparison between always-treated group and timing groups. A scatter plot is [here](./Figure/DID_Decomposition_bacondecomp.pdf).
+
+We can also use the following coding (after `xtdidregress`) to do the decomposition. The scatter plot can be found [here](./Figure/DID_Decomposition_estat.pdf).
+```stata
+estat bdecomp, graph
+```
 
 Complete coding for this example can be found [here](./Static_DID_and_Decomposition_(SW2006).do).
 
