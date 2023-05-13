@@ -31,17 +31,19 @@ Before 2017, many researchers naively believed that the TWFE DID could also be e
 
 
 ## Bacon Decomposition for Static DID
-First, what is static DID? **Static DID specifications** estimate a single treatment effect that is time invariant. That is, we only get one beta by running a static DID specification, and we use the one beta to summarize the treatment effect on the moment when the policy is implemented. The classical DID is exactly a static DID.
+First, what is static DID? **Static DID specifications** estimate a single treatment effect that is time invariant. That is, we only get one beta by running a static DID specification, and we use one coefficient to summarize the treatment effect since the policy is implemented. The classical DID is exactly a static DID.
 
-Second, what is Bacon decomposition? This concept comes from [Goodman-Bacon (2021)](https://doi.org/10.1016/j.jeconom.2021.03.014). The author proposes and proves the **DID decomposition theorem**, stating that the TWFE DID estimator equals a weighted average of all possible two-group/two-period DID estimators. For emphasizing this finding, the author writes the DID estimator as $\beta^{2\times2}$.
+Second, what is Bacon decomposition? This concept comes from [Goodman-Bacon (2021)](https://doi.org/10.1016/j.jeconom.2021.03.014). The author proposes and proves the **DID decomposition theorem**, stating that the TWFE DID estimator (applied to a case with staggered treatment) equals a weighted average of all possible two-group/two-period DID estimators. For emphasizing this finding, the author writes the DID estimator as $\beta^{2\times2}$.
 
 The DID decomposition theorem is important because it tells us the existence of a "bad" comparison in the classical DID if we include units treated at multiple time periods --- that is, comparing the late treatment group to the early treatment group before and after the late treatment. It is suggested that we should do the Bacon decomposition when running a static DID specification, by which we can see where our estimate comes from. For example, a negative DID estimate shows up possibly just because a negative result from a heavily weighted bad comparison.
 
-To do the Bacon decomposition in Stata, please install the `bacondecomp` package and use the following syntax:
+To do the Bacon decomposition in Stata, [Andrew Goodman-Bacon](http://goodman-bacon.com/) (Federal Reserve Bank of Minneapolis), [Thomas Goldring](https://tgoldring.github.io/) (Georgia State University), and [Austin Nichols](https://scholar.google.com/citations?hl=en&user=De4kiVMAAAAJ&view_op=list_works&sortby=pubdate) (Amazon) wrote the `bacondecomp` package. The basic syntax is:
 ```stata
 bacondecomp Y D, ddtail
 ```
 `Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition. Something sad is that this command can work well only in the cases where we have strongly balanced panel data.
+
+Stata 18 (released on Apr 25, 2023) introduces a new post-estimation command, `estat bdecomp`, for performing a Bacon decomposition. It can be used after the `didregress` or `xtdidregress` command, and a plot can be easily created by adding the `graph` option.
 
 
 ## Synthetic DID for Balanced Panel
@@ -120,7 +122,7 @@ The `horizons` option tells Stata how many forward horizons of treatment effects
 Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
 
 ### To be continued...
-Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) and [Arkhangelsky et al. (2021)](https://doi.org/10.1257/aer.20190159).
+Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) and [Dube et al. (2023)](https://doi.org/10.3386/w31184).
 
 
 ## Examples
@@ -138,6 +140,7 @@ The regression commands I will use include
   * `xtdidregress`, a built-in Stata command for running DID regression on panel data. After using it, we can use `estat` to create a trends plot and do some basic tests.
   * `xtreg`, `areg`, and `reghdfe` are originally written for running fixed effects models, but can also be easily applied to running DID regressions.
   * `sdid`, an external command for running SDID. Through the `method( )` option, we can also use it to run standard DID and synthetic control specifications.
+  * `xthdidregress`, a command introduced in Stata 18 for estimating heterogeneous ATT. Note that the `xthdidregress` command allows several kinds of weighting and I choose to use `aipw` (augmented inverse-probability weighting, also called "doubly robust"). Although the Stata 18 documentation does not clarify the author(s) of this command, my guess is that the idea of this command originates from [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001). Note that after regression, the `estat aggregation` command allows us to aggregate the ATTs within cohort or time, analyze the dynamic effect within a specified time window, and create plots.
 
 The complete coding for running regressions on the three datasets can be found [here](./TWFE_vs_SDID.do).
 
