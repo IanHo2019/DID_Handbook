@@ -2,10 +2,11 @@
 * (1) It shows some Stata commands to run difference-in-differences specifications by the two-way fixed effects (TWFE) model.
 * (2) Following Arkhangelsky et al. (2021) and Clarke et al. (2023), it runs synthetic DID. The data are from Orzechowski & Walker (2005) and data from Bhalotra et al. (2022).
 * (3) It shows how to run dynamic DID, using data from Serrato & Zidar (2018).
+* (4) It briefly instroduces "xthdidregress", a new command introduced in Stata 18.
 
 * Author: Ian He
 * Institution: The University of Oklahoma
-* Date: Apr 28, 2023
+* Date: May 13, 2023
 ***********************************************************************
 
 clear all
@@ -189,7 +190,6 @@ forvalues i = 0(1)5 {
 gen D6 = (period >= 6 & period != .)
 
 
-
 * Static DID
 local ylist = "log_rev_corptax log_gdp r_g"
 local i = 1
@@ -224,3 +224,34 @@ estout areg1 hdreg1 areg2 hdreg2 areg3 hdreg3, keep(D*) ///
 	coll(none) cells(b(star fmt(3)) se(par fmt(3))) ///
 	starlevels(* .1 ** .05 *** .01) legend ///
 	stats(N r2_a, nostar labels("Observations" "Adj. R2") fmt("%9.0fc" 3))
+
+
+**# Stata 18 new command: xthdidregress
+local controls = "FederalIncomeasStateTaxBase sales_wgt throwback FedIncomeTaxDeductible Losscarryforward FranchiseTax"
+local ps_var = "FederalIncomeasStateTaxBase sales_wgt throwback FedIncomeTaxDeductible FranchiseTax"
+
+xthdidregress aipw (log_gdp `controls') (treated `ps_var'), group(fips_state) vce(cluster fips_state)
+
+* Visualizing ATT for each cohort
+estat atetplot
+graph export "$figdir\SZ18_cohort_ATT.pdf", replace
+
+* Visualizing ATT over cohort
+estat aggregation, cohort ///
+	graph(xlab(, angle(45) labsize(small)) legend(rows(1) position(6)))
+graph export "$figdir\SZ18_cohort_agg_ATT.pdf", replace
+
+* Visualizing ATT over time
+estat aggregation, time ///
+	graph(xlab(, angle(45) labsize(small)) legend(rows(1) position(6)))
+graph export "$figdir\SZ18_time_agg_ATT.pdf", replace
+
+* Visualizing dynamic effects
+estat aggregation, dynamic(-5/6) ///
+	graph( ///
+		title("Dynamic Effects on Log State GDP", size(medlarge)) ///
+		xlab(, labsize(small) nogrid) ///
+		legend(rows(1) position(6)) ///
+		xline(0, lpattern(dash) lcolor(gs12) lwidth(thin)) ///
+	)
+graph export "$figdir\SZ18_dynamic_ATT.pdf", replace
