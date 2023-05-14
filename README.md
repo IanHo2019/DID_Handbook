@@ -174,7 +174,7 @@ xtreg asmrs post pcinc asmrh cases i.year, fe vce(cluster stfips)
 areg asmrs post pcinc asmrh cases i.year, absorb(stfips) vce(cluster stfips)
 reghdfe asmrs post pcinc asmrh cases, absorb(stfips year) cluster(stfips)
 ```
-`asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.516 (with standard error of 2.283), which is significantly different from zero at 95% confidence level.
+`asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.516 (with standard error of 2.283), which is insignificantly different from zero.
 
 Then we can apply the Bacon decomposition theorem to the TWFE DID model.
 ```stata
