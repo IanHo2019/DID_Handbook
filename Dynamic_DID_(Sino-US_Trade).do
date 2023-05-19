@@ -1,7 +1,7 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
 * Institution: The University of Oklahoma
-* Date: Apr 1, 2023
+* Date: May 18, 2023
 
 clear all
 
@@ -16,6 +16,7 @@ use "$dtadir\CCD_GAD_USA_affirm.dta", clear
 
 **# Create a series of dummies for duty impositions
 gen period_duty = year - year_des_duty
+gen treated = (period_duty < . & period_duty >= 0)
 
 gen Dn3 = (period_duty < -2)
 forvalues i = 2(-1)1 {
