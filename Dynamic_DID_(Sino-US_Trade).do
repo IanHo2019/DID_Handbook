@@ -1,7 +1,7 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
 * Institution: The University of Oklahoma
-* Date: May 18, 2023
+* Date: May 19, 2023
 
 clear all
 
@@ -182,10 +182,83 @@ graph export "$figdir\CS_DID_Trade_Destruction.pdf", replace
 
 
 *************************************************************************
+**# de Chaisemartin & D'Haultfoeuille (2020, 2022)
+* install did_multiplegt
+egen clst = group(product year)
+
+local dep = "value quantity company_num m_quantity"
+foreach y in `dep'{	
+	* Regression
+	did_multiplegt ln_`y' year_des_duty year treated, ///
+		robust_dynamic dynamic(4) placebo(2) jointtestplacebo ///
+		seed(1) breps(100) cluster(clst)
+	
+	* Visualization
+	if "`y'"=="value"{
+		local panel = "A)"
+		local title = "ln(Value)"
+	}
+	
+	if "`y'"=="quantity"{
+		local panel = "B)"
+		local title = "ln(Total Quantity)"
+	}
+	
+	if "`y'"=="company_num"{
+		local panel = "C)"
+		local title = "ln(Number of Exporters)"
+	}
+	
+	if "`y'"=="m_quantity"{
+		local panel = "D)"
+		local title = "ln(Mean Quantity)"
+	}
+	
+	forvalue i=1/8 {
+		local m_`i' = e(estimates)[`i',1]
+		local v_`i' = e(variances)[`i',1]
+	}
+
+	matrix input matb_DIDl= (`m_1',`m_2',`m_3',`m_4',`m_5',0,`m_7',`m_8')
+	mat colnames matb_DIDl= lg0 lg1 lg2 lg3 lg4 ld1 ld2 ld3
+
+	matrix input mats_DIDl= (`v_1',`v_2',`v_3',`v_4',`v_5',0,`v_7',`v_8')
+	mat colnames mats_DIDl= lg0 lg1 lg2 lg3 lg4 ld1 ld2 ld3
+
+	event_plot matb_DIDl#mats_DIDl, ///
+		stub_lag(lg#) stub_lead(ld#) ///
+		ciplottype(rcap) plottype(scatter) ///
+		lag_opt(msymbol(D) mcolor(black) msize(small)) ///
+		lead_opt(msymbol(D) mcolor(black) msize(small)) ///
+		lag_ci_opt(lcolor(black) lwidth(medthin)) ///
+		lead_ci_opt(lcolor(black) lwidth(medthin)) ///
+		graph_opt( ///
+			title("`panel' `title'", size(medlarge) position(11)) ///
+			xtitle("Period", height(5)) xsize(5) ysize(4) ///
+			ytitle("Average Effect", height(5)) ///
+			xline(0, lpattern(dash) lcolor(gs12) lwidth(thin)) ///
+			yline(0, lpattern(solid) lcolor(gs12) lwidth(thin)) ///
+			xlabel(-3/4, nogrid labsize(small)) ///
+			ylabel(, labsize(small)) ///
+			legend(order(1 "Coefficient" 2 "95% CI") size(*0.8) position(6) rows(1) region(lc(black))) ///
+			name(DIDl_`y', replace) ///
+			graphregion(color(white)) ///
+		)
+}
+
+grc1leg DIDl_value DIDl_quantity DIDl_company_num DIDl_m_quantity, ///
+	legendfrom(DIDl_value) cols(2) ///
+	graphregion(fcolor(white) lcolor(white)) ///
+	name(DIDl_fig, replace)
+
+gr draw DIDl_fig, ysize(5) xsize(6.5)
+graph export "$figdir\DIDl_Trade_Destruction.pdf", replace
+
+
+*************************************************************************
 **# Borusyak, Jaravel & Spiess (2022)
 * install did_imputation
 gen id = product
-egen clst = group(product year)
 gen Ei = year_des_duty
 
 local ylist = "value quantity company_num m_quantity"
