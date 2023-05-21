@@ -1,7 +1,7 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
 * Institution: The University of Oklahoma
-* Date: May 19, 2023
+* Date: May 20, 2023
 
 clear all
 
@@ -252,7 +252,7 @@ grc1leg DIDl_value DIDl_quantity DIDl_company_num DIDl_m_quantity, ///
 	name(DIDl_fig, replace)
 
 gr draw DIDl_fig, ysize(5) xsize(6.5)
-graph export "$figdir\DIDl_Trade_Destruction.pdf", replace
+graph export "$figdir\CD_DIDl_Trade_Destruction.pdf", replace
 
 
 *************************************************************************
