@@ -263,7 +263,6 @@ As before, I use the `event_plot` command to create a four-panel figure (see [he
 Coding for **imputation estimation** of DID is:
 ```stata
 gen id = product
-egen clst = group(product year)
 gen Ei = year_des_duty
 
 local ylist = "value quantity company_num m_quantity"
