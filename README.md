@@ -260,6 +260,21 @@ The `cs_did` command may show a very long output table in Stata results window (
 
 As before, I use the `event_plot` command to create a four-panel figure (see [here](./Figure/CS_DID_Trade_Destruction.pdf)) showing the dynamic effects. This time, I use the `default_look` option to save my time; in addition, I use the `together` option to make the leads and lags shown as one continuous curve.
 
+Coding for **de Chaisemartin & D'Haultfoeuille's estimation** of DID is:
+```stata
+egen clst = group(product year)
+
+local ylist = "value quantity m_quantity company_num"
+foreach y in `ylist'{
+	did_multiplegt ln_`y' year_des_duty year treated, ///
+		robust_dynamic dynamic(4) placebo(2) jointtestplacebo ///
+		seed(1) breps(100) cluster(clst)
+}
+```
+Here I use the estimator in [de Chaisemartin & D'Haultfoeuille (2022)](https://arxiv.org/abs/2007.04267) because I want to estimate dynamic effects. Something noteworthy is that I use the long-difference placebos to do the placebo test; the dynamic effects are estimated using the long-difference DID estimator, so using long-difference placebos is a correct comparison. By contrast, the first-difference placebo estimators are DIDs across consecutive time periods; if `firstdiff_placebo` is added here, the graph produced to illustrate dynamic treatment effects will be meaningless (i.e., not comparable). A related discussion can be found [here](https://www.statalist.org/forums/forum/general-stata-discussion/general/1599964-graph-for-the-dynamic-treatment-effect-using-did_multiplegt-package).
+
+I personally don't like the graphs produced automatically by `did_multiplegt`, and sadly, the `graphoptions( )` option is not flexible as I expect. Therefore, I choose to withdraw and store the estimates in matrices. Then, the `event_plot` command can be used to create graphs. The process of creating graphs is very similar to what I did in applying [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006)'s estimator. My four-panel figure can be seen [here](./Figure/CD_DIDl_Trade_Destruction.pdf).
+
 Coding for **imputation estimation** of DID is:
 ```stata
 gen id = product
