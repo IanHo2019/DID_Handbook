@@ -82,7 +82,7 @@ In this format of DID, an unbiased estimation becomes much more complicated than
 ### Interaction-Weighted Estimator for DID
 [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) propose an interaction-weighted (IW) estimator. Their estimator improves upon the TWFE estimator by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
 
-One of the authors, [Liyang Sun](https://lsun20.github.io/) at MIT, wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package: `avar`. The basic syntax is below:
+One of the authors, [Liyang Sun](https://lsun20.github.io/) (MIT), wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package: `avar`. The basic syntax is below:
 ```stata
 eventstudyinteract y rel_time_list, \\\
 	absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
@@ -100,7 +100,7 @@ Something sad is that this command is not well compatible with the `estout` pack
 
 For estimation, Callaway and Sant'Anna suggest we use the DR approach, because this approach only requires us to correctly specify either (but not necessarily both) the outcome evolution for the comparison group or the propensity score model.
 
-The two authors, with [Fernando Rios-Avila](https://www.levyinstitute.org/scholars/fernando-rios-avila) at Levy Economics Institute of Bard College, wrote a Stata package `csdid` to implement the DID estimator proposed in [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001). Internally, all $2 \times 2$ DID estimates are obtained using the `drdid` command; therefore, to run the `csdid`, we have to install two packages: `csdid` and `drdid`.
+The two authors, with [Fernando Rios-Avila](https://www.levyinstitute.org/scholars/fernando-rios-avila) (Levy Economics Institute of Bard College), wrote a Stata package `csdid` to implement the DID estimator proposed in [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001). Internally, all $2 \times 2$ DID estimates are obtained using the `drdid` command; therefore, to run the `csdid`, we have to install two packages: `csdid` and `drdid`.
 
 The basic syntax is below:
 ```stata
@@ -113,12 +113,34 @@ The command has several built-in methods to estimate the coefficient(s); the def
 [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) also provide some aggregation schemes to form more aggregated causal parameters. In Stata, we can produce the aggregated estimates by using the post-estimation `estat` or `csdid_estat` command. The second one is recommended if one uses a bootstrap procedure to estimate the standard errors.
 
 
+### Multiple Group-Time Estimator for DID
+Since 2020, [Clément de Chaisemartin](https://sites.google.com/site/clementdechaisemartin/) (SciencePo) and [Xavier D'Haultfœuille](https://faculty.crest.fr/xdhaultfoeuille/) (CREST) have written a series of papers to propose different DID estimation techniques. Their major contributions include:
+  * Their estimators are valid when the treatment effect is heterogenous over time or across groups.
+  * Their estimators allow for treatment switching (i.e., treatment is allowed to be revoked). Of course, additional assumptions are required; [de Chaisemar & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) explicitly write out three assumptions about strong exogeneity for $Y(1)$, common trends for $Y(1)$, and existence of stable groups that always get treated in a specific time window.
+  * Their estimators consider discounting the treatments occurring later in the panel data. (This could be evidence that Economics and Statistics can be combined well.)
+  * They propose several placebo estimators (constructed by mimicking the actual estimators) to test "no anticipation" and "parallel trends" assumptions.
+
+Note that when the not-yet-treated groups are used as controls and there are no control variables in the regression, their estimators are numerically equivalent to the estimators in [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001), introduced in the previous section. Additionally, note that de Chaisemar and D'Haultfœuille use "staggered" to call a treatment design that is not allowed to be revoked. This is very inconsistent with the literature; we usually call this kind of treatment design "absorbing treatment", and we use "staggered treatment" to call a treatment design where timing of adoption differs across groups.
+
+de Chaisemar and D'Haultfœuille wrote a Stata package `did_multiplegt` for applying their estimators. The basic syntax is:
+```stata
+did_multiplegt Y G T D
+```
+where `Y` is the outcome variable, `G` is the group variable, `T` is the time variable, and `D` is the treatment dummy. This command has a lot of options, and here I only introduce several important ones:
+  * If the `robust_dynamic` option is specified, the estimator proposed in [de Chaisemartin & D'Haultfoeuille (2022)](https://arxiv.org/abs/2007.04267), $DID_{g,l}$, will be used; otherwise, the estimator in [de Chaisemar & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322), $DID_M$, will be used. `robust_dynamic` must be specified if we want to estimate dynamic treatment effects. We can use the `dynamic(#)` option to specify the number of dynamic effects to be estimated.
+  * When `robust_dynamic` is specified, Stata uses the long-difference placebos proposed in [de Chaisemartin & D'Haultfoeuille (2022)](https://arxiv.org/abs/2007.04267). We can add the `firstdiff_placebo` option to make Stata use the first-difference placebos proposed in [de Chaisemar & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322). Through the `placebo(#)` option, we can specify the number of placebo estimators to be estimated. The number can be at most equal to the number of time period in our data.
+  * The command estimates the standard errors by using bootstrap. We can use the `cluster( )` option to require Stata to use a block bootstrap at a specific level. Interaction cannot be directly used in `cluster( )`, but we can generate a interaction term by using the `group( )` function before running regressions.
+  * The `discount(#)` option allows us to discount the treatment effects estimated later in the panel.
+  * The command by default produces a graph after each regression. By the `graphoptions( )` option, we can modify the appearance of the graph.
+
+The two authors wrote an information-rich documentation (with a long FAQ part) for their package. You can see it by entering `help did_multiplegt` in the command window.
+
 ### Imputation Estimator for DID
 [Borusyak, Jaravel & Spiess (2022, working paper)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) propose a finite-sample efficient robust DID estimator using an imputation procedure. The imputation-based method is welcomed because
   1. it is computationally efficient (it only requires estimating a simple TWFE model);
   1. the imputation easily links the parallel trends and no anticipation assumptions to the estimator.
 
-One of the authors, [Kirill Borusyak](https://sites.google.com/view/borusyak/home) at University College London (UCL), wrote a Stata package `did_imputation` for implementing their imputation approach to estimate the dynamic treatment effects and do pre-trend testing in event studies. The basic syntax is below:
+One of the authors, [Kirill Borusyak](https://sites.google.com/view/borusyak/home) (University College London), wrote a Stata package `did_imputation` for implementing their imputation approach to estimate the dynamic treatment effects and do pre-trend testing in event studies. The basic syntax is:
 ```stata
 did_imputation Y id t Ei, fe(id t) horizons(#) pretrends(#)
 ```
@@ -127,7 +149,7 @@ The `horizons` option tells Stata how many forward horizons of treatment effects
 Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
 
 ### To be continued...
-Potential candidate: [de Chaisemartin & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) and [Dube et al. (2023)](https://doi.org/10.3386/w31184).
+Potential candidate: [Dube et al. (2023)](https://doi.org/10.3386/w31184).
 
 ---
 
