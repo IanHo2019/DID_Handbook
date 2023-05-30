@@ -9,23 +9,23 @@ Before starting, I want to sincerely thank Professor [Corina Mommaerts](https://
 
 ## Canonical, Classical, and Textbook DID
 Difference in differences, as the name implies, involves comparisons between two groups across two periods. The first difference is between groups and the second difference is always between time. Those units in a group that becomes treated after the treatment time are referred to as the **treated group**. The other units are referred to as the **control group**. DID typically focuses on identifying and estimating the **average treatment effect on the treated (ATT)**; that is, it measures the average effect of the treatment on those who switch from being untreated to being treated. The dominant approach to implementing DID specifications in empirical research is to run **two-way fixed effects (TWFE)** regressions:
-$$Y_{it} = \theta_t + \eta_i + \alpha D_{it} + v_{it}$$
+$$Y_{it} = \alpha_i + \gamma_t + \beta D_{it} + \varepsilon_{it}$$
 where
   * $Y_{it}$ is outcome of interest;
-  * $\theta_t$ is a time fixed effect;
-  * $\eta_i$ is a unit or individual fixed effect;
+  * $\alpha_i$ is a unit or individual fixed effect;
+  * $\gamma_t$ is a time fixed effect;
   * $D_{it}$ is a 0/1 indicator for whether or not unit $i$ participating in the treatment in time period $t$;
-  * $v_{it}$ are idiosyncratic and time-varying unobservables.
+  * $\varepsilon_{it}$ are idiosyncratic and time-varying unobservables.
 
-Under **treatment effect homogeneity** and under the **parallel trends assumption**, $\alpha$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in current DID literature.
+Under **parallel trends**, **no anticipation**, and **treatment effect homogeneity** assumptions, $\beta$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in the current DID literature.
 
-Note that here we only consider the **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers think that DID can be easily applied to non-absorbing treatment; I don't think so, especially when researchers try to estimate the dynamic effects. 
+Note that here we only consider **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers are trying to extend DID to non-absorbing treatment (also called "**switching treatment**") design; it is feasible, but under additional assumptions.
 
 The TWFE regression can be easily run in Stata by using command `xtdidregress`, `xtreg`, `areg`, or `reghdfe`. To use the `reghdfe` command, we have to install `reghdfe` and `ftools` packages. The basic syntax is below:
 ```stata
-reghdfe Y D, absorb(id t)
+reghdfe Y D, absorb(id t) cluster(id)
 ```
-The `absorb` option is used to specify the fixed effects.
+The `absorb` option specifies the fixed effects, and the `cluster` option specifies at what level the standard errors are clustered.
 
 This format of DID involves only two time periods and two groups; that's why I call it canonical, classical, and textbook format. *Canonical* means "standard": this is the original and simplest one showing the key rationale behind the DID; *classical* means "traditional": it has been established for a long time, and sadly it becomes gradually outdated in modern applications; *textbook* means... it has been introduced in many textbooks, such as Jeffrey Wooldrige's *[Econometric Analysis of Cross Section and Panel Data](https://mitpress.mit.edu/9780262232586/econometric-analysis-of-cross-section-and-panel-data/)* (2010) and Bruce Hansen's *[Econometrics](https://press.princeton.edu/books/hardcover/9780691235899/econometrics)* (2022). The TWFE DID can be generalized to multi-period multi-unit cases, only if those treated units get treated in the same period. This kind of treatment is sometimes called **block treatment**.
 
@@ -44,9 +44,11 @@ To do the Bacon decomposition in Stata, [Andrew Goodman-Bacon](http://goodman-ba
 ```stata
 bacondecomp Y D, ddtail
 ```
-`Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition. Something sad is that this command can work well only in the cases where we have strongly balanced panel data.
+`Y` is outcome variable, `D` is treatment dummy, and the `ddtail` option is used for more detailed decomposition.
 
 Stata 18 (released on Apr 25, 2023) introduces a new post-estimation command, `estat bdecomp`, for performing a Bacon decomposition. It can be used after the `didregress` or `xtdidregress` command, and a plot can be easily created by adding the `graph` option.
+
+Something sad is that the Bacon decomposition in Stata can work well only in cases with strongly balanced panel data. To do the decomposition and find the weights attached to each coefficient in the cases with unbalanced panel data, you may try the `twowayfeweights` command, written by Clement de Chaisemartin, Xavier D'Haultfoeuille, and [Antoine Deeb](https://sites.google.com/view/antoinedeeb) (World Bank). Please read [de Chaisemar & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) for details.
 
 ---
 
@@ -80,7 +82,9 @@ In this format of DID, an unbiased estimation becomes much more complicated than
 
 
 ### Interaction-Weighted Estimator for DID
-[Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) propose an interaction-weighted (IW) estimator. Their estimator improves upon the TWFE estimator by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
+[Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) formalize the assumptions for identification of coefficients in a static/dynamic TWFE model. Specifically, if treatment effects vary across time (i.e., $\beta_k$ changes with $k$), then the estimator in a static TWFE model will be biased, but the estimator in a dynamic TWFE model is still valid under the homogeneity assumption (i.e., $\beta_k$ doesn't change across treated groups). Sadly, when heterogeneous treatment effects are allowed, estimators in both static and dynamic TWFE models are biased.
+
+In response to the contamination in the TWFE models, [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) propose an interaction-weighted (IW) estimator. Their estimator improves by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
 
 One of the authors, [Liyang Sun](https://lsun20.github.io/) (MIT), wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package: `avar`. The basic syntax is below:
 ```stata
@@ -136,17 +140,17 @@ where `Y` is the outcome variable, `G` is the group variable, `T` is the time va
 The two authors wrote an information-rich documentation (with a long FAQ part) for their package. You can see it by entering `help did_multiplegt` in the command window.
 
 ### Imputation Estimator for DID
-[Borusyak, Jaravel & Spiess (2022, working paper)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) propose a finite-sample efficient robust DID estimator using an imputation procedure. The imputation-based method is welcomed because
+[Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) propose a finite-sample efficient robust DID estimator using an imputation procedure. The imputation-based method is welcomed because
   1. it is computationally efficient (it only requires estimating a simple TWFE model);
   1. the imputation easily links the parallel trends and no anticipation assumptions to the estimator.
 
-One of the authors, [Kirill Borusyak](https://sites.google.com/view/borusyak/home) (University College London), wrote a Stata package `did_imputation` for implementing their imputation approach to estimate the dynamic treatment effects and do pre-trend testing in event studies. The basic syntax is:
+One of the authors, [Kirill Borusyak](https://sites.google.com/view/borusyak) (University College London), wrote a Stata package `did_imputation` for implementing their imputation approach to estimate the dynamic treatment effects and do pre-trend testing in event studies. The basic syntax is:
 ```stata
 did_imputation Y id t Ei, fe(id t) horizons(#) pretrends(#)
 ```
 The `horizons` option tells Stata how many forward horizons of treatment effects we want to estimate, and the `pretrends` option tells Stata to perform a pre-trend testing for some periods. The post-treatment coefficients are reported as `tau0`, `tau1`, ...; the pre-trend coefficients are reported as `pre1`, `pre2`, .... In contrast with the aforementioned approaches, here the number of pre-trend coefficients does not affect the post-treatment effect estimates, which are always computed under the assumption of parallel trends and no anticipation.
 
-Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4121430) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
+Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://arxiv.org/abs/2108.12419) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
 
 ### To be continued...
 Potential candidate: [Dube et al. (2023)](https://doi.org/10.3386/w31184).
