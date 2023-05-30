@@ -21,7 +21,7 @@ Under **parallel trends**, **no anticipation**, and **treatment effect homogenei
 
 Note that here we only consider **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers are trying to extend DID to non-absorbing treatment (also called "**switching treatment**") design; it is feasible, but under additional assumptions.
 
-The TWFE regression can be easily run in Stata by using command `xtdidregress`, `xtreg`, `areg`, or `reghdfe`. To use the `reghdfe` command, we have to install `reghdfe` and `ftools` packages. The basic syntax is below:
+The TWFE regression can be easily run in Stata by using command `xtreg`, `areg`, `reghdfe`, or `xtdidregress`. Note that `xtdidregress` is only available in Stata 17 or higher, and `reghdfe` can only be used after we install `reghdfe` and `ftools` packages. I like using `reghdfe` because it has flexible options and computes faster than others. The basic syntax of `reghdfe` is:
 ```stata
 reghdfe Y D, absorb(id t) cluster(id)
 ```
@@ -193,7 +193,7 @@ where
  * $X_{st}$ are state-level control variables.
  * The treatment group consists of the states adopting unilateral divorce laws, while the control group consists of the remaining states.
 
-In Stata, `xtdidregress`, `xtreg`, `areg`, or `reghdfe` can be used to run this regression; I prefer `reghdfe` because it works faster and has more flexible options. The estimated coefficients from all these commands should be identical (standard errors and R-squared are different due to different algorithms).
+The estimated coefficients from all the following commands should be identical (but standard errors and R-squared are different due to different algorithms).
 ```stata
 xtdidregress (asmrs pcinc asmrh cases) (post), group(stfips) time(year) vce(cluster stfips)
 xtreg asmrs post pcinc asmrh cases i.year, fe vce(cluster stfips)
