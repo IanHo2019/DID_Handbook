@@ -185,7 +185,7 @@ use "http://pped.org/bacon_example.dta", clear
 The panel data contain state-level information (in particular, no-fault divorce onset year and suicide mortality rate) on 49 states (including Washington, D.C. but excluding Alaska and Hawaii) in the US from 1964 to 1996. They are originally used by [Stevenson & Wolfers (2006)](https://www.jstor.org/stable/25098790) to estimate the effect of no-fault (or unilateral) divorce on female suicide rate.
 
 Here, I first run a static TWFE DID specification of female suicide (a staggered treatment) on no-fault divorce reforms:
-$$y_{st} = \alpha_s + \gamma_t + \beta D_{st} + \Gamma X_{st} + e_{it}$$
+$$y_{st} = \alpha_s + \gamma_t + \beta D_{st} + \Gamma X_{st} + e_{st}$$
 where
  * $\alpha_s$ is a state fixed effect;
  * $\gamma_t$ is a year fixed effect;
