@@ -177,14 +177,14 @@ The regression commands I will use include
 The complete coding for running regressions on the three datasets can be found [here](./TWFE_vs_SDID.do).
 
 
-### Bacon Decomposition as a Diagnostic Tool
+### Bacon Decomposition, Event Study Plots, and Placebo Test
 The dataset to be used can be loaded into Stata by running the following code:
 ```stata
 use "http://pped.org/bacon_example.dta", clear
 ```
 The panel data contain state-level information (in particular, no-fault divorce onset year and suicide mortality rate) on 49 states (including Washington, D.C. but excluding Alaska and Hawaii) in the US from 1964 to 1996. They are originally used by [Stevenson & Wolfers (2006)](https://www.jstor.org/stable/25098790) to estimate the effect of no-fault (or unilateral) divorce on female suicide rate.
 
-Here, I run a static TWFE DID specification of female suicide (a staggered treatment) on no-fault divorce reforms:
+Here, I first run a static TWFE DID specification of female suicide (a staggered treatment) on no-fault divorce reforms:
 $$y_{st} = \alpha_s + \gamma_t + \beta D_{st} + \Gamma X_{st} + e_{it}$$
 where
  * $\alpha_s$ is a state fixed effect;
@@ -200,7 +200,7 @@ xtreg asmrs post pcinc asmrh cases i.year, fe vce(cluster stfips)
 areg asmrs post pcinc asmrh cases i.year, absorb(stfips) vce(cluster stfips)
 reghdfe asmrs post pcinc asmrh cases, absorb(stfips year) cluster(stfips)
 ```
-`asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.516 (with standard error of 2.283), which is insignificantly different from zero.
+`asmrs` is suicide mortality rate, and `post` is treatment dummy $D_{st}$. All the other variables are control variables. Stata reports a DID coefficient in levels of -2.516 (with a standard error of 2.283), which is insignificantly different from zero.
 
 Then we can apply the Bacon decomposition theorem to the TWFE DID model.
 ```stata
@@ -212,8 +212,13 @@ We can also use the following coding (after `xtdidregress`) to do the decomposit
 ```stata
 estat bdecomp, graph
 ```
+Keep in mind that Bacon decomposition works as a diagnostic tool, instead of a remedy. The decomposition tells the seriousness of the "bad comparison" in our DID specification, but it cannot treat it.
 
-Complete coding for this example can be found [here](./Static_DID_and_Decomposition_(SW2006).do).
+The next regression I run is the dynamic DID. I use the `eventdd` command because it can run the model and generate a plot at the same time. This command allows for some basic regressions (e.g., `xtreg` and `reghdfe`); for advanced DID regressions, I recommend the `event_plot` package (which will be detailed in the next example). To use `eventdd`, two packages, `eventdd` and `matsort`, have to be installed.
+
+Finally, I do a timing placebo test by randomly and repeatedly selecting a placebo treatment time and run TWFE regression for 1000 times. This work is done by using Stata built-in command `permute`. The test result shows that my estimate above may not come from an unobservable time trend. A plot from the placebo test can be seen [here](./Figure/placebo_test_plot.pdf).
+
+Complete coding for this example can be found [here](./DID_Example_(SW2006).do).
 
 
 ### Dynamic DID with Staggered Treatment
