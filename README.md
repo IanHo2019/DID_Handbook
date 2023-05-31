@@ -1,5 +1,5 @@
 # DID Handbook
-Comments on better coding or error correction are welcomed. **Contact:** [ianhe2019@ou.edu](mailto:ianhe2019@ou.edu?subject=[GitHub]%20DID%20Handbook).
+Comments on better coding or error correction are welcomed. **Contact:** [ianho0815@outlook.com](mailto:ianho0815@outlook.com?subject=[GitHub]%20DID%20Handbook).
 
 **Difference in differences** (also written as DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details in each format of DID; please read those papers for greater details.
 
