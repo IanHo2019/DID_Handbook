@@ -1,11 +1,10 @@
-* This do file finishes three tasks:
+* This do file finishes four tasks:
 * (1) It shows some Stata commands to run difference-in-differences specifications by the two-way fixed effects (TWFE) model.
 * (2) Following Arkhangelsky et al. (2021) and Clarke et al. (2023), it runs synthetic DID. The data are from Orzechowski & Walker (2005) and data from Bhalotra et al. (2022).
 * (3) It shows how to run dynamic DID, using data from Serrato & Zidar (2018).
 * (4) It briefly instroduces "xthdidregress", a new command introduced in Stata 18.
 
 * Author: Ian He
-* Institution: The University of Oklahoma
 * Date: May 13, 2023
 ***********************************************************************
 
