@@ -1,6 +1,5 @@
 * This do file runs Sun & Abraham (2021)'s DID method using data on China's export to the US in 2000-2009. The main goal is to show how to contruct a table in LaTeX to report the results, considering that as of now there is no package (like "estout") works well with "eventstudyinteract" to export regression results in a table.
 * Author: Ian He
-* Institution: The University of Oklahoma
 * Date: Apr 22, 2023
 *************************************************************************
 
