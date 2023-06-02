@@ -212,11 +212,11 @@ We can also use the following coding (after `xtdidregress`) to do the decomposit
 ```stata
 estat bdecomp, graph
 ```
-Keep in mind that Bacon decomposition works as a diagnostic tool, instead of a remedy. The decomposition tells the seriousness of the "bad comparison" in our DID specification, but it cannot treat it.
+Keep in mind that Bacon decomposition works as a diagnostic tool, instead of a remedy. The decomposition tells us the seriousness of the "bad comparison" in our DID specification, but it cannot cure it.
 
-The next regression I run is the dynamic DID. I use the `eventdd` command because it can run the model and generate a plot at the same time. This command allows for some basic regressions (e.g., `xtreg` and `reghdfe`); for advanced DID regressions, I recommend the `event_plot` package (which will be detailed in the next example). To use `eventdd`, two packages, `eventdd` and `matsort`, have to be installed.
+The next regression I run is a corresponding dynamic DID. I use the `eventdd` command because it can run the model and generate a plot at the same time. This command allows for some basic regressions (e.g., `xtreg` and `reghdfe`); for plotting results from advanced DID regressions, I recommend the `event_plot` package (which will be detailed in the next example). To use `eventdd`, two packages, `eventdd` and `matsort`, have to be installed.
 
-Finally, I do a timing placebo test by randomly and repeatedly selecting a placebo treatment time and run TWFE regression for 1000 times. This work is done by using Stata built-in command `permute`. The test result shows that my estimate above may not come from an unobservable time trend. A plot from the placebo test can be seen [here](./Figure/placebo_test_plot.pdf).
+Finally, I do a timing placebo test by randomly and repeatedly selecting a placebo treatment time and run TWFE regression for 1000 times. This work is done by using Stata built-in command `permute`. The test result shows that my estimate above may not come from an unobservable time trend. A plot (created by the add-in command `dpplot`) from the placebo test can be seen [here](./Figure/placebo_test_plot.pdf).
 
 Complete coding for this example can be found [here](./DID_Example_(SW2006).do).
 
