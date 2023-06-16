@@ -8,7 +8,7 @@ Before starting, I want to sincerely thank Professor [Corina Mommaerts](https://
 ---
 
 ## Canonical, Classical, and Textbook DID
-Difference in differences, as the name implies, involves comparisons between two groups across two periods. The first difference is between groups and the second difference is always between time. Those units in a group that becomes treated after the treatment time are referred to as the **treated group**. The other units are referred to as the **control group**. DID typically focuses on identifying and estimating the **average treatment effect on the treated (ATT)**; that is, it measures the average effect of the treatment on those who switch from being untreated to being treated. The dominant approach to implementing DID specifications in empirical research is to run **two-way fixed effects (TWFE)** regressions:
+Difference in differences, as the name implies, involves comparisons between two groups across two periods. The first difference is between groups and the second difference is always between time. Those units that becomes treated after the treatment time constitute the **treated group**; the other units constitute the **control group**. DID typically focuses on identifying and estimating the **average treatment effect on the treated (ATT)**; that is, it measures the average effect of the treatment on those who switch from being untreated to being treated. The dominant approach to implementing DID approach in empirical research is to run a **two-way fixed effects (TWFE)** regression:
 $$Y_{it} = \alpha_i + \gamma_t + \beta D_{it} + \varepsilon_{it}$$
 where
   * $Y_{it}$ is outcome of interest;
@@ -19,7 +19,7 @@ where
 
 Under **parallel trends**, **no anticipation**, and **treatment effect homogeneity** assumptions, $\beta$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in the current DID literature.
 
-Note that here we only consider **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers are trying to extend DID to non-absorbing treatment (also called "**switching treatment**") design; it is feasible, but under additional assumptions.
+Note that in this handbook I only consider **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers are trying to extend DID to non-absorbing treatment (also called "**switching treatment**") design; it is feasible, but under additional assumptions.
 
 The TWFE regression can be easily run in Stata by using command `xtreg`, `areg`, `reghdfe`, or `xtdidregress`. Note that `xtdidregress` is only available in Stata 17 or higher, and `reghdfe` can only be used after we install `reghdfe` and `ftools` packages. I like using `reghdfe` because it has flexible options and computes faster than others. The basic syntax of `reghdfe` is:
 ```stata
@@ -74,7 +74,7 @@ Something noteworthy is that we can use the `graph` and `g1on` options to create
 ---
 
 ## Dynamic DID
-Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once [Sibal Yang](https://www.econjobrumors.com/topic/mu-jeung-yang) posts a new problem set on Canvas, what is the effect of the problem set on students' happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
+Often, researchers are not satisfied when only a static effect is estimated; they may also want to see the long-term effects of a policy. For example, once [Sibal Yang](https://www.econjobrumors.com/topic/mu-jeung-yang/page/7) posts a new problem set on Canvas, what is the effect of the problem set on students' happiness on each day before the due date? Anyway, the classical dynamic DID specifications allow for changes in the treatment effects over time. An example of the dynamic DID specification is shown below:
 $$Y_{it} = \alpha_i + \gamma_t + \sum_{k = -4, \ k \neq -1}^5 \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
 Within dynamic specifications, researchers need to address the issue of multi-collinearity. The most common way to avoid the multi-collinearity is to exclude the treatment dummy for period -1 (the last period before the treatment) as shown above. Additionally, above I binned distant relative periods, which is also a common action to address the imbalance issues.
 
