@@ -48,7 +48,11 @@ bacondecomp Y D, ddtail
 
 Stata 18 (released on Apr 25, 2023) introduces a new post-estimation command, `estat bdecomp`, for performing a Bacon decomposition. It can be used after the `didregress` or `xtdidregress` command, and a plot can be easily created by adding the `graph` option.
 
-Something sad is that the Bacon decomposition in Stata can work well only in cases with strongly balanced panel data. To do the decomposition and find the weights attached to each coefficient in the cases with unbalanced panel data, you may try the `twowayfeweights` command, written by Clement de Chaisemartin, Xavier D'Haultfoeuille, and [Antoine Deeb](https://sites.google.com/view/antoinedeeb) (World Bank). Please read [de Chaisemar & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) for details.
+Something sad is that the Bacon decomposition in Stata can work well with **strongly balanced panel data**.
+
+Actually, Bacon decomposition is not the only method of decomposing the DID estimator; another method was proposed by [de Chaisemar & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322). The `twowayfeweights` package in Stata, written by Clement de Chaisemartin, Xavier D'Haultfoeuille, and [Antoine Deeb](https://sites.google.com/view/antoinedeeb) (World Bank), allows us to apply the second decomposition method, and fortunately this method can work with unbalanced panel data. However, it is noteworthy that these two decompositions are different in explaining the problem in TWFE DID:
+  * [Goodman-Bacon (2021)](https://doi.org/10.1016/j.jeconom.2021.03.014) states that the conventional DID estimator can be expressed as a weighted average of all possible $2 \times 2$ DID estimators, some of which relies on **bad comparisons** as described above.
+  * [de Chaisemar & D'Haultfœuille (2020)](https://www.jstor.org/stable/26966322) states that the conventional DID estimator can be expressed as a weighted average of causal effects (ATEs) across group-time cells, some of which are assigned **negative weights** (i.e., problem of negative weighting).
 
 ---
 
