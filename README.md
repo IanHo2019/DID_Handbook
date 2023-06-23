@@ -90,7 +90,7 @@ In this format of DID, an unbiased estimation becomes much more complicated than
 
 In response to the contamination in the TWFE models, [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) propose an interaction-weighted (IW) estimator. Their estimator improves by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
 
-One of the authors, [Liyang Sun](https://lsun20.github.io/) (MIT), wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package: `avar`. The basic syntax is below:
+One of the authors, [Liyang Sun](https://lsun20.github.io/)[^1] (Center for Monetary and Financial Studies, CEMFI), wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package (in addition to `reghdfe` and `ftools`): `avar`. The basic syntax is below:
 ```stata
 eventstudyinteract y rel_time_list, \\\
 	absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
@@ -99,6 +99,7 @@ Note that we must include a list of relative time indicators as we would have in
 
 Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and then deal with the matrix. See my coding example [here](./Dynamic_DID_(SA2021).do).
 
+[^1]: Ms. Sun is my second favorite female econometrician, and her papers on estimating treatment effects and using intrumental variables are worth reading. My top favorite female econometrician is [Xiaoxia Shi](https://users.ssc.wisc.edu/~xshi/) (UW-Madison), although it is too hard for me to understand her advanced research.
 
 ### Doubly Robust Estimator for DID
 [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) pay a particular attention to the disaggregated causal parameter --- the average treatment effect for group $g$ at time $t$, where a "group" is defined by the time period when units are first treated. They name this parameter as "**group-time average treatment effect**", denoted by $ATT(g,t)$, and propose three different types of DID estimators to estimate it:
