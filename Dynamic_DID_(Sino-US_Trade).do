@@ -361,15 +361,15 @@ foreach y in `ylist'{
 			title("`panel'", position(11)) ///
 			xtitle("") ytitle("ATT Estimates") ///
 			xlabel(, angle(45) labsize(small)) ylabel(, labsize(small)) ///
-			legend(rows(1) position(6) region(lc(black))) ///
-			name(twm_`y', replace) ///
+			legend(order(1 "Point Estimate" 2 "95% CI") rows(1) position(6) region(lc(black))) ///
+			name(etwfe_`y', replace) ///
 		)
 }
 
-grc1leg twm_value twm_quantity twm_company_num twm_m_quantity, ///
-	legendfrom(twm_value) cols(2) ///
+grc1leg etwfe_value etwfe_quantity etwfe_company_num etwfe_m_quantity, ///
+	legendfrom(etwfe_value) cols(2) ///
 	graphregion(fcolor(white) lcolor(white)) ///
-	name(twm_fig, replace)
+	name(etwfe_fig, replace)
 
-gr draw twm_fig, ysize(5) xsize(6.5)
-graph export "$figdir\TWM_DID_Trade_Destruction.pdf", replace
+gr draw etwfe_fig, ysize(5) xsize(6.5)
+graph export "$figdir\ETWFE_DID_Trade_Destruction.pdf", replace
