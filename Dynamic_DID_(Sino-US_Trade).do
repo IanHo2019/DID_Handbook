@@ -1,17 +1,19 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
-* Date: May 20, 2023
+* Date: Jun 23, 2023
+* Stata Version: 18
 
 clear all
 
-global localdir "D:\research\DID Example"
+global localdir "D:\research\DID"
 
 global dtadir   "$localdir\Data"
 global figdir   "$localdir\Figure"
 
 
-*************************************************************************
-use "$dtadir\CCD_GAD_USA_affirm.dta", clear
+
+********************************************************************************
+use "$dtadir\USA_AD_CHN.dta", clear
 
 **# Create a series of dummies for duty impositions
 gen period_duty = year - year_des_duty
@@ -29,8 +31,10 @@ gen D4 = (period_duty >= 4) & (period_duty != .)
 
 
 **# Classical Dynamic DID
-* install reghdfe ftools
-encode hs06, generate(product) // string variables not allowed for xtset and regression
+* ssc install reghdfe, replace
+* ssc install ftools, replace
+
+encode hs06, generate(product) // string variables are not allowed for "xtset" and regressions
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{
@@ -45,9 +49,13 @@ estout reg*, keep(D*) ///
 	stats(N r2_a, nostar labels("Observations" "Adjusted R-Square") fmt("%9.0fc" 3))
 
 
-*************************************************************************
+
+********************************************************************************
 **# Sun and Abraham (2021)
-* install eventstudyinteract avar
+* ssc install eventstudyinteract, replace
+* ssc install avar, replace
+* ssc install event_plot, replace
+
 gen first_union = year_des_duty
 gen never_union = (first_union == .)
 
@@ -103,13 +111,13 @@ foreach y in `dep'{
 			yline(0, lpattern(solid) lcolor(gs12) lwidth(thin)) ///
 			xlabel(-3 "< -2" -2(1)3 4 "> 3", labsize(small)) ///
 			ylabel(, labsize(small)) ///
-			legend(order(1 "Coefficient" 2 "95% CI") size(*0.8)) ///
+			legend(order(1 "Coefficient" 2 "95% CI") size(*0.8) rows(1) region(lc(black))) ///
 			name(sa_`y', replace) ///
 			graphregion(color(white)) ///
 		)
 }
 
-* install grc1leg: net install grc1leg.pkg, replace
+* net install grc1leg.pkg, replace
 grc1leg sa_value sa_quantity sa_company_num sa_m_quantity, ///
 	legendfrom(sa_value) cols(2) ///
 	graphregion(fcolor(white) lcolor(white)) ///
@@ -119,9 +127,12 @@ gr draw sa_fig, ysize(5) xsize(6.5)
 graph export "$figdir\SA_DID_Trade_Destruction.pdf", replace
 
 
-*************************************************************************
+
+********************************************************************************
 **# Callaway & Sant'Anna (2021)
-* install csdid drdid
+* ssc install csdid, replace
+* ssc install drdid, replace
+
 gen gvar = year_des_duty
 recode gvar (. = 0)
 
@@ -166,7 +177,7 @@ foreach y in `ylist'{
 			title("`panel' `title'", size(medlarge) position(11)) ///
 			xlab(-3(1)4, labsize(small)) ///
 			ylab(, angle(90) nogrid labsize(small)) ///
-			legend(lab(1 "Coefficient") lab(2 "95% CI") size(*0.8)) ///
+			legend(lab(1 "Coefficient") lab(2 "95% CI") size(*0.8) rows(1) region(lc(black))) ///
 			name(cs_`y', replace) ///
 		)
 }
@@ -180,10 +191,12 @@ gr draw cs_fig, ysize(5) xsize(6.5)
 graph export "$figdir\CS_DID_Trade_Destruction.pdf", replace
 
 
-*************************************************************************
+
+********************************************************************************
 **# de Chaisemartin & D'Haultfoeuille (2020, 2022)
-* install did_multiplegt
-egen clst = group(product year)
+* ssc install did_multiplegt, replace
+
+egen clst = group(product year)	// construct a interaction variable for clustering later
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
@@ -254,16 +267,17 @@ gr draw DIDl_fig, ysize(5) xsize(6.5)
 graph export "$figdir\CD_DIDl_Trade_Destruction.pdf", replace
 
 
-*************************************************************************
+
+********************************************************************************
 **# Borusyak, Jaravel & Spiess (2022)
-* install did_imputation
-gen id = product
+* ssc install did_imputation, replace
+
 gen Ei = year_des_duty
 
 local ylist = "value quantity company_num m_quantity"
 foreach y in `ylist'{
 	quietly{
-		eststo imp_`y': did_imputation ln_`y' id year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
+		eststo imp_`y': did_imputation ln_`y' product year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
 	}
 }
 
@@ -273,7 +287,6 @@ estout imp*, ///
 	stats(N r2_a, nostar labels("Observations" "Adjusted R-Square") fmt("%9.0fc" 3))
 
 * Visualization
-* install event_plot
 local ylist = "value quantity company_num m_quantity"
 foreach y in `ylist'{
 	if "`y'"=="value"{
@@ -303,7 +316,7 @@ foreach y in `ylist'{
 			xlab(-2(1)3 4 "> 3", labsize(small)) ///
 			ylab(, angle(90) nogrid labsize(small)) ///
 			yline(0, lcolor(gs8) lpattern(dash)) ///
-			legend(size(*0.8)) ///
+			legend(size(*0.8) rows(1) region(lc(black))) ///
 			name(imp_`y', replace) ///
 		)
 }
@@ -315,3 +328,48 @@ grc1leg imp_value imp_quantity imp_company_num imp_m_quantity, ///
 
 gr draw imp_fig, ysize(5) xsize(6.5)
 graph export "$figdir\Imputation_DID_Trade_Destruction.pdf", replace
+
+
+
+********************************************************************************
+**# Wooldridge (2021)
+
+xtset product year
+
+local ylist = "value quantity company_num m_quantity"
+foreach y in `ylist'{
+	if "`y'"=="value"{
+		local panel = "A) ln(Value)"
+	}
+	
+	if "`y'"=="quantity"{
+		local panel = "B) ln(Total Quantity)"
+	}
+	
+	if "`y'"=="company_num"{
+		local panel = "C) ln(Number of Exporters)"
+	}
+	
+	if "`y'"=="m_quantity"{
+		local panel = "D) ln(Mean Quantity)"
+	}
+	
+	xthdidregress twfe (ln_`y') (treated), group(product) vce(cluster clst)
+
+	estat aggregation, time ///
+		graph( ///
+			title("`panel'", position(11)) ///
+			xtitle("") ytitle("ATT Estimates") ///
+			xlabel(, angle(45) labsize(small)) ylabel(, labsize(small)) ///
+			legend(rows(1) position(6) region(lc(black))) ///
+			name(twm_`y', replace) ///
+		)
+}
+
+grc1leg twm_value twm_quantity twm_company_num twm_m_quantity, ///
+	legendfrom(twm_value) cols(2) ///
+	graphregion(fcolor(white) lcolor(white)) ///
+	name(twm_fig, replace)
+
+gr draw twm_fig, ysize(5) xsize(6.5)
+graph export "$figdir\TWM_DID_Trade_Destruction.pdf", replace
