@@ -3,7 +3,7 @@ Comments on better coding or error correction are welcomed. **Contact:** [ianho0
 
 **Difference in differences** (also written as DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details in each format of DID; please read those papers for greater details.
 
-Before starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my PhD colleagues [Mieon Seong](https://www.youtube.com/@user-es5rt7yi1s), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their persistent support.
+Before starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my former PhD colleagues [Mieon Seong](https://www.youtube.com/@user-es5rt7yi1s), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their persistent support.
 
 ---
 
@@ -154,7 +154,37 @@ did_imputation Y id t Ei, fe(id t) horizons(#) pretrends(#)
 ```
 The `horizons` option tells Stata how many forward horizons of treatment effects we want to estimate, and the `pretrends` option tells Stata to perform a pre-trend testing for some periods. The post-treatment coefficients are reported as `tau0`, `tau1`, ...; the pre-trend coefficients are reported as `pre1`, `pre2`, .... In contrast with the aforementioned approaches, here the number of pre-trend coefficients does not affect the post-treatment effect estimates, which are always computed under the assumption of parallel trends and no anticipation.
 
-Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://arxiv.org/abs/2108.12419) is one of the wonderful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
+Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://arxiv.org/abs/2108.12419) is one of the fruitful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
+
+### Extended TWFE Estimator for DID
+[Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) claims that "there is nothing inherently wrong with using TWFE in situations such as staggered interventions". Professor Wooldridge proposed an extended TWFE estimator in DID research design (including block and staggered treatments), based on his finding that the traditional TWFE estimator and a two-way Mundlak (TWM) estimator are equivalent.
+
+What is the **two-way Mundlak regression**? [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) defines it as a regression of $Y_{it}$ on a constant term, $X_{it}$ (independent variable of interest), $\frac{1}{T} \sum_t X_{it}$ (the unit-specific average over time), and $\frac{1}{N} \sum_i X_{it}$ (the cross-sectional average for $t$). By Frisch-Waugh-Lovell theorem (a good introduction is in Sections 3.16 and 3.18 of *[Econometrics](https://press.princeton.edu/books/hardcover/9780691235899/econometrics)*) and some algebraic calculations, we can see the coefficient of $X_{it}$ is the same as the one in the traditional TWFE regression. Moreover, adding time-invariant variables ($Z_i$) and unit-invariant variables ($M_t$) does not change the coefficient of $X_{it}$.
+
+Based on the findings above, [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) finds that an unbiased, consistent, and asymptotic efficient estimator for heterogeneous ATTs in DID can be obtained by
+  * running a TWFE regression with an inclusion of interactions between treatment-time cohorts and time; or equivalently
+  * running a pooled OLS regression with an inclusion of panel-level averages of covariates.
+
+Amazingly, this estimator allows for heterogenous effects over time, over covariates, or over both. 
+
+For example, the traditional TWFE DID regression is
+$$Y_{it} = \beta D_{it} + \alpha_i + \gamma_t + \varepsilon_{it}$$
+and [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s proposed model is an extended TWFE regression:
+$$Y_{it} = \eta + \sum_{g = q}^T \alpha_g G_{ig} + \sum_{s=q}^T \gamma_s F_s + \sum_{g = q}^T \sum_{s=g}^T \beta_{gs} D_{it} G_{ig} F_s + \varepsilon_{it}$$
+where $q$ denotes the first period the treatment occurs, $G_{ig}$ is a group dummy, and $F_s$ is a dummy indicating post-treatment period ($F_s = 1$ if $t = s$, where $s \in [q, T]$).
+
+To use this estimation strategy in Stata, Fernando Rios-Avila wrote a package named `jwdid`. The basic syntax is:
+```stata
+jwdid Y, ivar(id) tvar(time) gvar(cohort)
+```
+Note that this command, unlike `reghdfe`, does not drop singleton observations automatically, so statistical significance may be biased. What's worse, after using this command, we have to manually aggregate the estimates and then plot figures. Fortunately, Stata 18 introduces a new command: `xthdidregress`. One of its functions is to implement [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s extended TWFE estimator. The basic syntax is
+```stata
+xthdidregress twfe (Y) (tvar), group(gvar)
+```
+In the post-estimation results, only the ATT estimates (for each cohort) at the treatment time and for the periods thereafter are shown; this is because [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) proves that including time dummies and their related interactions for periods prior to the earliest treatment period doesn't affect the coefficient estimates of interest. Thus, after we use `xthdidregress twfe`, it's impossible to draw a figure that presents dynamic effects over the whole time window of our data.
+
+The extended TWFE estimator has a big advantage: it can be obtained from a very basic regression (pooled OLS) so that most researchers can understand it easily. However, a disadvantage is also obvious: its computation could be very intense because it usually includes many interactions and computes a great number of coefficient estimates. In the `xthdidregress` command, we can use the `hettype( )` option (specifying the type of heterogeneous treatment effects) to alter the default `timecohort` to `time` or `cohort` and then the complexity of computation is reduced.
+
 
 ### To be continued...
 Potential candidate: [Dube et al. (2023)](https://doi.org/10.3386/w31184).
@@ -263,7 +293,7 @@ foreach y in `dep'{
 ```
 Traditionally, researchers use pre-treatment coefficients to test for pretrends: If the pre-treatment coefficients is not significantly different from 0, then they conclude that the parallel trends assumption hold. However, [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) have proved that this action has a serious shortcoming and need correction.
 
-Coding for **interaction-weighted estimation** of DID is:
+Coding for **interaction-weighted estimation** in DID is:
 ```stata
 gen first_union = year_des_duty
 gen never_union = (first_union == .)
@@ -279,7 +309,7 @@ We need to tell Stata which variable corresponds to the initial treatment timing
 
 Something noteworthy is that a package named `event_plot` was written by [Kirill Borusyak](https://sites.google.com/view/borusyak/home) for easily plotting the staggered DID estimates, including post-treatment coefficients and, if available, pre-trend coefficients, along with confidence intervals. I use this command to create a four-panel figure (see [here](./Figure/SA_DID_Trade_Destruction.pdf)) showing the dynamic effects on the four outcome variables. For plotting, I usually customize the plot type, but actually you can save a lot of time by using the default type (by using the `default_look` option) if your requirement for visualization is not as high as mine.
 
-Coding for **doubly robust estimation** of DID is:
+Coding for **doubly robust estimation** in DID is:
 ```stata
 gen gvar = year_des_duty
 recode gvar (. = 0)
@@ -295,7 +325,7 @@ The `cs_did` command may show a very long output table in Stata results window (
 
 As before, I use the `event_plot` command to create a four-panel figure (see [here](./Figure/CS_DID_Trade_Destruction.pdf)) showing the dynamic effects. This time, I use the `default_look` option to save my time; in addition, I use the `together` option to make the leads and lags shown as one continuous curve.
 
-Coding for **de Chaisemartin & D'Haultfoeuille's estimation** of DID is:
+Coding for **de Chaisemartin & D'Haultfoeuille's estimation** in DID is:
 ```stata
 egen clst = group(product year)
 
@@ -310,19 +340,28 @@ Here I use the estimator in [de Chaisemartin & D'Haultfoeuille (2022)](https://a
 
 I personally don't like the graphs produced automatically by `did_multiplegt`, and sadly, the `graphoptions( )` option is not flexible as I expect. Therefore, I choose to withdraw and store the estimates in matrices. Then, the `event_plot` command can be used to create graphs. The process of creating graphs is very similar to what I did in applying [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006)'s estimator. My four-panel figure can be seen [here](./Figure/CD_DIDl_Trade_Destruction.pdf).
 
-Coding for **imputation estimation** of DID is:
+Coding for **imputation estimation** in DID is:
 ```stata
-gen id = product
 gen Ei = year_des_duty
 
-local ylist = "value quantity company_num m_quantity"
+local ylist = "value quantity m_quantity company_num"
 foreach y in `ylist'{
-	did_imputation ln_`y' id year Ei, \\\
-		fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
+	did_imputation ln_`y' product year Ei, fe(product year) cluster(clst) horizons(0/4) pretrends(2) minn(0) autosample
 }
 ```
 We need to give Stata a variable for unit-specific date of treatment, whose missing value represents the never-treated unit. I name it `Ei`, following the package documentation.
 
 A four-panel figure presenting the dynamic effects estimated by the imputation approach can be found [here](./Figure/Imputation_DID_Trade_Destruction.pdf). This time, I use the `default_look` option but don't use the `together` option --- this is why the leads and lags are shown as two separate curves in different colors.
+
+Coding for **extended TWFE estimation** in DID is:
+```stata
+xtset product year
+
+local ylist = "value quantity m_quantity company_num"
+foreach y in `ylist'{
+	xthdidregress twfe (ln_`y') (treated), group(product) vce(cluster clst)
+}
+```
+As I said before, here we cannot use `estat aggregation, dynamic` to plot a figure for presenting dynamic effects over all horizons. Therefore, I use `estat aggregation, time` to create four panels (see [here](./Figure/ETWFE_DID_Trade_Destruction.pdf)) showing the treatment effect at each point in time.
 
 To summarize, regardless of estimation approaches, the results show persistent and negative effects of USA antidumping duty impositions on the four outcome variables. Complete coding for this example can be found [here](./Dynamic_DID_(Sino-US_Trade).do).
