@@ -1,12 +1,12 @@
 * This do file finishes four tasks:
-* (1) It shows some Stata commands to run difference-in-differences specifications by the two-way fixed effects (TWFE) model.
+* (1) It shows some Stata commands to obtain difference-in-differences estimates by the two-way fixed effects (TWFE) regression.
 * (2) Following Arkhangelsky et al. (2021) and Clarke et al. (2023), it runs synthetic DID. The data are from Orzechowski & Walker (2005) and data from Bhalotra et al. (2022).
 * (3) It shows how to run dynamic DID, using data from Serrato & Zidar (2018).
 * (4) It briefly instroduces "xthdidregress", a new command introduced in Stata 18.
 
 * Author: Ian He
-* Date: May 13, 2023
-***********************************************************************
+* Date: June 26, 2023
+********************************************************************************
 
 clear all
 
@@ -16,13 +16,13 @@ global dtadir   "$localdir\Data"
 global figdir   "$localdir\Figure"
 
 
-
-*************************************************************************
+********************************************************************************
 **# Block Treatment: Orzechowski & Walker (2005)
 use "$dtadir\OW05_prop99.dta", clear
 
 encode state, gen(state_code)
 xtset state_code year
+table year treated
 * Balanced panel: 39 states, years from 1970 to 2000.
 * Treated group: California (1 unit).
 * Control group: 38 other states.
@@ -102,9 +102,43 @@ graph combine "$figdir\sdid_2.gph" "$figdir\did_2.gph" "$figdir\sc_2.gph" "$figd
 	graphregion(fcolor(white) lcolor(white))
 graph export "$figdir\compare_sdid_did_sc.pdf", replace
 
+* Visualize the year-by-year effects
+* We need to run the sdid as many times as post treatment times, and each time we use all pre-treatment years (1970-1988) and only one post-treatment year.
+matrix te = J(12, 3, .)	// generate a matrix to collect the estimates
+
+local j = 1
+forval t = 1989(1)2000 {
+    sdid packspercapita state year treated if year<=1988 | year==`t', vce(placebo) seed(1)
+    
+    * store point and interval estimates
+    local b = e(tau)[1,1]
+    local se = e(se)
+    local lb = `b' + invnormal(0.025)*`se'
+    local ub = `b' + invnormal(0.975)*`se'
+    matrix te[`j',1] = `b'
+    matrix te[`j',2] = `lb'
+    matrix te[`j',3] = `ub'
+    local ++j
+}
+
+matlist te
+matrix coln te = estimate lower upper
+
+clear
+svmat te, n(col)	// covert the matrix to variables
+gen year = _n + 1988
+
+twoway (line estimate year, lc(black)) ///
+	(rcap lower upper year, lc(black)) ///
+	(scatter estimate year, mc(black) msize(medium)), ///
+	yline(0, lc(gs12) lp(dash)) ///
+	xlabel(1989(1)2000) ///
+	title("Year-by-Year Treatment Effects") xtitle("Year") ytitle("") ///
+	xlab(, nogrid) ylabel(-50(10)20) legend(off)
+graph export "$figdir\sdid_att_over_time.pdf", replace
 
 
-*************************************************************************
+********************************************************************************
 **# Staggered Treatment: Bhalotra et al. (2022)
 use "$dtadir\BCGV22_gender_quota.dta", clear
 
@@ -133,18 +167,25 @@ matrix list e(lambda)
 matrix list e(omega)
 matrix list e(adoption)	// different adoption years
 
+* Covariate adjustments
 eststo stagg2: sdid womparl country year quota, covariates(lngdp, optimized) vce(bootstrap) seed(3)
 
 eststo stagg3: sdid womparl country year quota, covariates(lngdp, projected) vce(bootstrap) seed(3)
 
+matrix list e(beta)	// coefficient estimates of covariates
+
+* Obtain the std. err. and p-values of coefficients of covariates
+bysort country: egen treat_num = total(quota)
+reghdfe womparl lngdp if treat_num==0, abs(country year) cluster(country)
+
+* Compare three SDID results
 estout stagg*, ///
 	coll(none) cells(b(star fmt(3)) se(par fmt(3))) ///
 	starlevels(* .1 ** .05 *** .01) legend ///
 	stats(N, nostar labels("Observations") fmt("%9.0fc"))
 
 
-
-*************************************************************************
+********************************************************************************
 **# Staggered Treatment: Serrato & Zidar (2018)
 use "$dtadir\SZ18_state_taxes.dta", replace
 
