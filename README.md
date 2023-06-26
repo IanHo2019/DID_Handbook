@@ -61,7 +61,7 @@ Actually, Bacon decomposition is not the only method of decomposing the DID esti
   * Like DID, SDID allows for a constant difference between treatment and controls over all pretreatment periods.
   * Like SC, SDID reweights and matches pre-exposure trends to relax the conventional "parallel trend" assumption.
 
-The key step in SDID is to find **unit weights** ($\omega_i$) that ensure that the comparison is made between treated units and controls which approximately follow parallel trends prior to the treatments and find **time weights** ($\lambda_t$) that draw higher weights from pre-treatment periods which are more similar to post-treatment periods. By applying these weights to canonical DID (which simply assigns the equal weights to all groups and periods), we can obtain a consistent estimate for the causal effect of treatment. Fortunately, this method can be applied to cases with staggered treatments. Unfortunately, this method cannot be used in case of **unbalanced panel data**, and it does not work to estimate dynamic effects.
+The key step in SDID is to find **unit weights** ($\omega_i$) that ensure that the comparison is made between treated units and controls which approximately follow parallel trends prior to the treatments and find **time weights** ($\lambda_t$) that draw higher weights from pre-treatment periods which are more similar to post-treatment periods. By applying these weights to canonical DID (which simply assigns the equal weights to all groups and periods), we can obtain a consistent estimate for the causal effect of treatment. Fortunately, this method can be applied to cases with **staggered treatments**, but unfortunately this method cannot be used in cases with **unbalanced panel data**.
 
 SDID can be implemented in Stata by the `sdid` package (written by [Damian Clarke](https://www.damianclarke.net/) at University of Exeter and [Daniel Pailañir](https://daniel-pailanir.github.io/) at Universidad de Chile). The basic syntax is
 ```stata
@@ -73,7 +73,16 @@ where
   * `treatment` indicates a unit that is treated at/after a specific time period.
   * `vce(vcetype)` is a required option specifying what methods used for estimating variance. The available inference methods include `bootstrap`, `jackknife`, `placebo`, and `noinference`. If only one unit is treated, then bootstrap and jackknife methods cannot be used. For using placebo method, we need at least one more control unit than treated unit.
 
-Something noteworthy is that we can use the `graph` and `g1on` options to create figures (as Figure 1 in [Arkhangelsky et al., 2022](https://doi.org/10.1257/aer.20190159)) displaying unit weights (in scatter plot), time weights (in area plot), and outcome trends (in line plot).
+Following the regression, we can use the `graph` and `g1on` options to create figures (as Figure 1 in [Arkhangelsky et al., 2022](https://doi.org/10.1257/aer.20190159)) displaying unit weights (in scatter plot), time weights (in area plot), and outcome trends (in line plot).
+
+In certain settings, we may want to include some covariates based on which treated and control units will be adjusted. The adjustment procedure is:
+  1. Regress the outcome variable ($Y$) on the covariates ($X$) and get coefficient estimates $\hat{\beta}$.
+  2. Calculate the residuals for each observation: $Y_{it}^{res} = Y_{it} - X_{it}\hat{\beta}$.
+  3. Applying SDID process to the residuals.
+
+This procedure removes the impact of changes in covariates from the outcome variable prior to searching for the synthetic control; this is why it is called a "pre-processing task". The `sdid` command gives us the `covariates( )` option for doing covariate adjustment conveniently. Note that as of now there are two ways of finding the coefficient estimates $\hat{\beta}$:
+  * `optimized` (default option), implementing an efficient optimizatio procedure from [Frank & Wolfe (1956)](https://doi.org/10.1002/nav.3800030109). This method may lead to bias in estimating ATTs in some settings.
+  * `projected`, proposed by [Kranz (2022)](https://github.com/skranz/xsynthdid/blob/main/paper/synthdid_with_covariates.pdf), running a TWFE regression of the outcome variable on included covariates (using only observation that are *never treated*). This method, compared to the former one, saves lots of computation time because it uses only one simple regression.
 
 ---
 
