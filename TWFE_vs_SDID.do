@@ -5,7 +5,7 @@
 * (4) It briefly instroduces "xthdidregress", a new command introduced in Stata 18.
 
 * Author: Ian He
-* Date: June 26, 2023
+* Date: June 29, 2023
 ********************************************************************************
 
 clear all
@@ -143,8 +143,7 @@ graph export "$figdir\sdid_att_over_time.pdf", replace
 use "$dtadir\BCGV22_gender_quota.dta", clear
 
 drop if lngdp==.
-tab year
-isid country year
+table year quota
 * Balanced panel: 115 countries, years from 1990 to 2015.
 * Treated group: 9 countries.
 * Control group: 106 other states.
