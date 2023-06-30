@@ -168,8 +168,8 @@ The two authors wrote an information-rich documentation (with a long FAQ part) f
 ### Imputation Estimator for DID
 [Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) propose a finite-sample efficient robust DID estimator using a three-step imputation procedure:
   1. Run a TWFE model using the non-treated (i.e., never-treated and not-yet-treated) observations only. For example, the simplest model is $Y_{it} = \alpha_i + \gamma_t + e_{it}$.
-  2. Extrapolate the model from step 1 to treated observations, and get non-treated potential outcomes $\hat{Y}_it(0)$ for each treated observation.
-  3. Obtain an estimate of the treatment effect $\beta_{it} = Y_{it} - \hat{Y}_{it}(0)$ for each treated observation. Take averages of estimated treatment effects to get the aggregate ATTs.
+  2. Extrapolate the model from step 1 to treated observations, and get non-treated potential outcomes $\hat{Y}_{it}(0)$ for each treated observation.
+  3. Obtain an estimate of the treatment effect $\hat\beta_{it} = Y_{it} - \hat{Y}_{it}(0)$ for each treated observation. Take averages of estimated treatment effects to get the aggregate ATTs.
 
 This imputation-based method is welcomed because
   * it is computationally efficient (it only requires estimating a simple TWFE model);
