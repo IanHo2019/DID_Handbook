@@ -1,9 +1,19 @@
 # DID Handbook
 Comments on better coding or error correction are welcomed. **Contact:** [ianho0815@outlook.com](mailto:ianho0815@outlook.com?subject=[GitHub]%20DID%20Handbook).
 
-**Difference in differences** (also written as DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details in each format of DID; please read those papers for greater details.
+**Difference in differences** (also written as DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details of each DID estimator; please read related papers for greater details. The table below summarizes most estimators and their important requirements; researchers may use it to search for a proper estimator in a certain setting.
 
-Before starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my former PhD colleagues [Mieon Seong](https://www.youtube.com/@user-es5rt7yi1s), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their persistent support.
+| Inventor(s) | Estimator | Parallel Trends | No Anticipation | Effect Homogeneity | Existence of Never-Treated |
+| --- | --- | :---: | :---: | :---: | :---: |
+| Unknown | Classical TWFE | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| [Arkhangelsky et al. (2022)](https://doi.org/10.1257/aer.20190159) | SDID | | :heavy_check_mark: | | :heavy_check_mark: |
+| [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) | Interaction Weighted | :heavy_check_mark: | :heavy_check_mark: | | |
+| [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) | Doubly Robust | :heavy_check_mark: | :heavy_check_mark: | | |
+| de Chaisemartin & D'Haultfœuille | $DID_M$ and $DID_{g,l}$ | :heavy_check_mark: | :heavy_check_mark: | | |
+| [Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) | Imputation | :heavy_check_mark: | :heavy_check_mark: | | |
+| [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) | Extended TWFE | :heavy_check_mark: | :heavy_check_mark: | | |
+
+Before formally starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my former PhD colleagues [Mieon Seong](https://www.youtube.com/@user-es5rt7yi1s), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their one-year support.
 
 ---
 
@@ -61,7 +71,7 @@ Actually, Bacon decomposition is not the only method of decomposing the DID esti
   * Like DID, SDID allows for a constant difference between treatment and controls over all pretreatment periods.
   * Like SC, SDID reweights and matches pre-exposure trends to relax the conventional "parallel trend" assumption.
 
-The key step in SDID is to find **unit weights** ($\omega_i$) that ensure that the comparison is made between treated units and controls which approximately follow parallel trends prior to the treatments and find **time weights** ($\lambda_t$) that draw higher weights from pre-treatment periods which are more similar to post-treatment periods. By applying these weights to canonical DID (which simply assigns the equal weights to all groups and periods), we can obtain a consistent estimate for the causal effect of treatment. Fortunately, this method can be applied to cases with **staggered treatments**, but unfortunately this method cannot be used in cases with **unbalanced panel data**.
+The key step in SDID is to find **unit weights** ($\omega_i$) that ensure that the comparison is made between treated units and controls which approximately follow parallel trends prior to the treatments and find **time weights** ($\lambda_t$) that draw higher weights from pre-treatment periods which are more similar to post-treatment periods. By applying these weights to canonical DID (which simply assigns the equal weights to all groups and periods), we can obtain a consistent estimate for the causal effect of treatment. Fortunately, SDID can be applied to cases with **staggered treatments** but it requires the existence of **never-treated units**. Unfortunately, SDID cannot work for **unbalanced panel data**.
 
 SDID can be implemented in Stata by the `sdid` package (written by [Damian Clarke](https://www.damianclarke.net/) at University of Exeter and [Daniel Pailañir](https://daniel-pailanir.github.io/) at Universidad de Chile). The basic syntax is
 ```stata
@@ -91,7 +101,7 @@ Often, researchers are not satisfied when only a static effect is estimated; the
 $$Y_{it} = \alpha_i + \gamma_t + \sum_{k = -4, \ k \neq -1}^5 \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
 Within dynamic specifications, researchers need to address the issue of multi-collinearity. The most common way to avoid the multi-collinearity is to exclude the treatment dummy for period -1 (the last period before the treatment) as shown above. Additionally, above I binned distant relative periods, which is also a common action to address the imbalance issues.
 
-In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians have tried to solve this problem and they are still trying nowadays. In the following, I only cover several brand new (dynamic) DID estimators with their corresponding commands in Stata. Note that some of the following Stata packages are under development, so it is best to read their recent documentations before applying them to your research.
+In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians have tried to solve this problem and they are still trying nowadays. In the following, I will cover most (but not all) brand new (dynamic) DID estimators with their corresponding commands in Stata. Some of the following Stata packages are still under development, so it is best to read their recent documentations before applying them to your research.
 
 
 ### Interaction-Weighted Estimator for DID
@@ -109,6 +119,7 @@ Note that we must include a list of relative time indicators as we would have in
 Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and then deal with the matrix. See my coding example [here](./Dynamic_DID_(SA2021).do).
 
 [^1]: Ms. Sun is my second favorite female econometrician, and her papers on estimating treatment effects and using intrumental variables are worth reading. My top favorite female econometrician is [Xiaoxia Shi](https://users.ssc.wisc.edu/~xshi/) (UW-Madison), although it is too hard for me to understand her advanced research.
+
 
 ### Doubly Robust Estimator for DID
 [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) pay a particular attention to the disaggregated causal parameter --- the average treatment effect for group $g$ at time $t$, where a "group" is defined by the time period when units are first treated. They name this parameter as "**group-time average treatment effect**", denoted by $ATT(g,t)$, and propose three different types of DID estimators to estimate it:
@@ -153,10 +164,16 @@ where `Y` is the outcome variable, `G` is the group variable, `T` is the time va
 
 The two authors wrote an information-rich documentation (with a long FAQ part) for their package. You can see it by entering `help did_multiplegt` in the command window.
 
+
 ### Imputation Estimator for DID
-[Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) propose a finite-sample efficient robust DID estimator using an imputation procedure. The imputation-based method is welcomed because
-  1. it is computationally efficient (it only requires estimating a simple TWFE model);
-  1. the imputation easily links the parallel trends and no anticipation assumptions to the estimator.
+[Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) propose a finite-sample efficient robust DID estimator using a three-step imputation procedure:
+  1. Run a TWFE model using the non-treated (i.e., never-treated and not-yet-treated) observations only. For example, the simplest model is $Y_{it} = \alpha_i + \gamma_t + e_{it}$.
+  2. Extrapolate the model from step 1 to treated observations, and get non-treated potential outcomes $\hat{Y}_it(0)$ for each treated observation.
+  3. Obtain an estimate of the treatment effect $\beta_{it} = Y_{it} - \hat{Y}_{it}(0)$ for each treated observation. Take averages of estimated treatment effects to get the aggregate ATTs.
+
+This imputation-based method is welcomed because
+  * it is computationally efficient (it only requires estimating a simple TWFE model);
+  * the imputation easily links the parallel trends and no anticipation assumptions to the estimator.
 
 One of the authors, [Kirill Borusyak](https://sites.google.com/view/borusyak) (University College London), wrote a Stata package `did_imputation` for implementing their imputation approach to estimate the dynamic treatment effects and do pre-trend testing in event studies. The basic syntax is:
 ```stata
@@ -165,6 +182,7 @@ did_imputation Y id t Ei, fe(id t) horizons(#) pretrends(#)
 The `horizons` option tells Stata how many forward horizons of treatment effects we want to estimate, and the `pretrends` option tells Stata to perform a pre-trend testing for some periods. The post-treatment coefficients are reported as `tau0`, `tau1`, ...; the pre-trend coefficients are reported as `pre1`, `pre2`, .... In contrast with the aforementioned approaches, here the number of pre-trend coefficients does not affect the post-treatment effect estimates, which are always computed under the assumption of parallel trends and no anticipation.
 
 Furthermore, [Borusyak, Jaravel & Spiess (2022)](https://arxiv.org/abs/2108.12419) is one of the fruitful papers that points out the infamous "**negative weighting**" problem in the classical DID. This problem arises because the OLS estimation imposes a very strong restriction on treatment effect homogeneity. This is why the classical dynamic DID is called a contaminated estimator by some econometricians.
+
 
 ### Extended TWFE Estimator for DID
 [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) claims that "there is nothing inherently wrong with using TWFE in situations such as staggered interventions". Professor Wooldridge proposed an extended TWFE estimator in DID research design (including block and staggered treatments), based on his finding that the traditional TWFE estimator and a two-way Mundlak (TWM) estimator are equivalent.
