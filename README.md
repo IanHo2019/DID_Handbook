@@ -3,15 +3,15 @@ Comments on better coding or error correction are welcomed. **Contact:** [ianho0
 
 **Difference in differences** (also written as DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details of each DID estimator; please read related papers for greater details. The table below summarizes most estimators and their important requirements; researchers may use it to search for a proper estimator in a certain setting.
 
-| Inventor(s) | Estimator | Parallel Trends | No Anticipation | Effect Homogeneity | Existence of Never-Treated |
-| --- | --- | :---: | :---: | :---: | :---: |
-| Unknown | Classical TWFE | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| [Arkhangelsky et al. (2022)](https://doi.org/10.1257/aer.20190159) | SDID | | :heavy_check_mark: | | :heavy_check_mark: |
-| [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) | Interaction Weighted | :heavy_check_mark: | :heavy_check_mark: | | |
-| [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) | Doubly Robust | :heavy_check_mark: | :heavy_check_mark: | | |
-| de Chaisemartin & D'Haultfœuille | $DID_M$ and $DID_{g,l}$ | :heavy_check_mark: | :heavy_check_mark: | | |
-| [Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) | Imputation | :heavy_check_mark: | :heavy_check_mark: | | |
-| [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) | Extended TWFE | :heavy_check_mark: | :heavy_check_mark: | | |
+| Inventor(s) | Estimator | Parallel Trends | No Anticipation | Effect Homogeneity | Existence of Never-Treated | Balanced Panel |
+| --- | --- | :---: | :---: | :---: | :---: | :---: |
+| Unknown | Classical TWFE | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | |
+| [Arkhangelsky et al. (2022)](https://doi.org/10.1257/aer.20190159) | SDID | | :heavy_check_mark: | | :heavy_check_mark: | :heavy_check_mark: |
+| [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) | Interaction Weighted | :heavy_check_mark: | :heavy_check_mark: | | | |
+| [Callaway & Sant'Anna (2021)](https://doi.org/10.1016/j.jeconom.2020.12.001) | Doubly Robust | :heavy_check_mark: | :heavy_check_mark: | | | |
+| de Chaisemartin & D'Haultfœuille | $DID_M$ and $DID_{g,l}$ | :heavy_check_mark: | :heavy_check_mark: | | | |
+| [Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) | Imputation | :heavy_check_mark: | :heavy_check_mark: | | | |
+| [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) | Extended TWFE | :heavy_check_mark: | :heavy_check_mark: | | | |
 
 Before formally starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my former PhD colleagues [Mieon Seong](https://www.youtube.com/@user-es5rt7yi1s), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their one-year support.
 
