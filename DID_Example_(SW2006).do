@@ -60,7 +60,7 @@ eventdd asmrs pcinc asmrh cases, ///
 	)
 
 * Only balanced periods in which all units have data are shown in the plot.
-eventdd asmrs pcinc asmrh cases i.year, ///
+eventdd asmrs pcinc asmrh cases, ///
 	timevar(rel_time) method(hdfe, cluster(stfips) absorb(stfips year)) balanced ///
 	noline graph_op( ///
 		xlabel(, nogrid) ///
@@ -69,7 +69,7 @@ eventdd asmrs pcinc asmrh cases i.year, ///
 	)
 
 * Only specified periods are shown in the plot; periods beyond the window are accumulated.
-eventdd asmrs pcinc asmrh cases i.year, ///
+eventdd asmrs pcinc asmrh cases, ///
 	timevar(rel_time) method(hdfe, cluster(stfips) absorb(stfips year)) ///
 	accum leads(5) lags(10) ///
 	noline graph_op( ///
