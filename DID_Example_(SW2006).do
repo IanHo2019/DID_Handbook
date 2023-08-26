@@ -1,10 +1,10 @@
 * This do file uses Stevenson & Wolfers (2006)'s data to show how to run DID specifications, do DID decomposition, create event study plots for estimates, and take a simple placebo test.
 * Author: Ian He
-* Date: May 31, 2023
+* Date: Aug 26, 2023
 
 clear all
 
-global localdir "D:\research\DID Example"
+global localdir "D:\research\DID"
 
 global figdir   "$localdir\Figure"
 global figdir   "$localdir\Figure"
@@ -15,8 +15,7 @@ global figdir   "$localdir\Figure"
 use "http://pped.org/bacon_example.dta", clear
 
 * We see multiple treatment years.
-tab year
-tab _nfd	// the year of the passage of no-fault divorce law
+table year post
 
 * Regression of female suicide on no-fault divorce reforms
 eststo reg1: quietly reghdfe asmrs post pcinc asmrh cases, absorb(stfips year) cluster(stfips)
