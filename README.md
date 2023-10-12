@@ -1,7 +1,9 @@
 # DID Handbook
-Comments on better coding or error correction are welcomed. **Contact:** [ianho0815@outlook.com](mailto:ianho0815@outlook.com?subject=[GitHub]%20DID%20Handbook).
+Comments on better coding or error correction are always welcomed. **Contact:** [ianho0815@outlook.com](mailto:ianho0815@outlook.com?subject=[GitHub]%20DID%20Handbook).
 
-**Difference in differences** (also written as DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details of each DID estimator; please read related papers for greater details. The table below summarizes most estimators and their important requirements; researchers may use it to search for a proper estimator in a certain setting.
+**Difference in differences** (whose abbreviation is DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details of each DID estimator; please read related papers for greater details.
+
+The table below summarizes various DID estimators and their prerequisites for validity; researchers may use it to search for a proper estimator in a certain setting.
 
 | Inventor(s) | Estimator | Parallel Trends | No Anticipation | Effect Homogeneity | Existence of Never-Treated | Balanced Panel |
 | --- | --- | :---: | :---: | :---: | :---: | :---: |
@@ -13,7 +15,7 @@ Comments on better coding or error correction are welcomed. **Contact:** [ianho0
 | [Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) | Imputation | :heavy_check_mark: | :heavy_check_mark: | | | |
 | [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) | Extended TWFE | :heavy_check_mark: | :heavy_check_mark: | | | |
 
-Before formally starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my former PhD colleagues [Mieon Seong](https://www.youtube.com/@user-es5rt7yi1s), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their one-year support.
+Before formally starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my former PhD colleagues [Mieon Seong](https://github.com/Mieoni), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their one-year support.
 
 ---
 
@@ -27,9 +29,11 @@ where
   * $D_{it}$ is a 0/1 indicator for whether or not unit $i$ participating in the treatment in time period $t$;
   * $\varepsilon_{it}$ are idiosyncratic and time-varying unobservables.
 
-Under **parallel trends**, **no anticipation**, and **treatment effect homogeneity** assumptions, $\beta$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in the current DID literature.
+Under **parallel trends**[^1], **no anticipation**, and **homogeneous treatment effect** assumptions, $\beta$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in the current DID literature.
 
-Note that in this handbook I only consider **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers are trying to extend DID to non-absorbing treatment (also called "**switching treatment**") design; it is feasible, but under additional assumptions.
+[^1]: See my another repository ([Parallel_Trends](https://github.com/IanHo2019/Parallel_Trends)) for a guideline for testing and relaxing Parallel Trends assumption.
+
+Note that in this handbook I focus on **absorbing treatment**: Once a unit receives a treatment, it cannot get out of the treatment in any future period. Some researchers are trying to extend DID to non-absorbing treatment (also called "**switching treatment**") design; it is feasible, but under additional assumptions.
 
 The TWFE regression can be easily run in Stata by using command `xtreg`, `areg`, `reghdfe`, or `xtdidregress`. Note that `xtdidregress` is only available in Stata 17 or higher, and `reghdfe` can only be used after we install `reghdfe` and `ftools` packages. I like using `reghdfe` because it has flexible options and computes faster than others. The basic syntax of `reghdfe` is:
 ```stata
@@ -101,15 +105,15 @@ Often, researchers are not satisfied when only a static effect is estimated; the
 $$Y_{it} = \alpha_i + \gamma_t + \sum_{k = -4, \ k \neq -1}^5 \beta_k D_{it}^k + \delta_1 \sum_{k < -4} D_{it}^k + \delta_2 \sum_{k > 5} D_{it}^k + \varepsilon_{it}$$
 Within dynamic specifications, researchers need to address the issue of multi-collinearity. The most common way to avoid the multi-collinearity is to exclude the treatment dummy for period -1 (the last period before the treatment) as shown above. Additionally, above I binned distant relative periods, which is also a common action to address the imbalance issues.
 
-In this format of DID, an unbiased estimation becomes much more complicated than the classical DID. A lot of econometricians have tried to solve this problem and they are still trying nowadays. In the following, I will cover most (but not all) brand new (dynamic) DID estimators with their corresponding commands in Stata. Some of the following Stata packages are still under development, so it is best to read their recent documentations before applying them to your research.
+In this format of DID, doing an unbiased estimation becomes much more complicated. A lot of econometricians have tried to solve this problem and they are still trying nowadays. In the following, I will cover most (but not all) brand new **heterogeneity-robust DID estimators** with their corresponding commands in Stata. Some of the following Stata packages are still under development, so it is best to read their latest documentations before applying them to your research.
 
 
 ### Interaction-Weighted Estimator for DID
-[Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) formalize the assumptions for identification of coefficients in a static/dynamic TWFE model. Specifically, if treatment effects vary across time (i.e., $\beta_k$ changes with $k$), then the estimator in a static TWFE model will be biased, but the estimator in a dynamic TWFE model is still valid under the homogeneity assumption (i.e., $\beta_k$ doesn't change across treated groups). Sadly, when heterogeneous treatment effects are allowed, estimators in both static and dynamic TWFE models are biased.
+[Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) formalize the assumptions for identification of coefficients in a static/dynamic TWFE model. Specifically, if treatment effects vary across time (i.e., $\beta_k$ changes with period $k$), then the estimator in a static TWFE model will be biased, but the estimator in a dynamic TWFE model is still valid if $\beta_k$ doesn't change across treated groups. Sadly, when heterogeneous treatment effects assumption are completely relaxed, estimators in both static and dynamic TWFE models are biased.
 
 In response to the contamination in the TWFE models, [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006) propose an interaction-weighted (IW) estimator. Their estimator improves by estimating an interpretable weighted average of **cohort-specific average treatment effect on the treated (CATT)**. Here, a *cohort* is defined as a group consisting of all units that were first treated at the same time.
 
-One of the authors, [Liyang Sun](https://lsun20.github.io/)[^1] (Center for Monetary and Financial Studies, CEMFI), wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package (in addition to `reghdfe` and `ftools`): `avar`. The basic syntax is below:
+One of the authors, [Liyang Sun](https://lsun20.github.io/)[^2] (Center for Monetary and Financial Studies, CEMFI), wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package (in addition to `reghdfe` and `ftools`): `avar`. The basic syntax is below:
 ```stata
 eventstudyinteract y rel_time_list, \\\
 	absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
@@ -118,7 +122,7 @@ Note that we must include a list of relative time indicators as we would have in
 
 Something sad is that this command is not well compatible with the `estout` package; therefore, to report the results in a figure/table, we may have to first store the results in a matrix and then deal with the matrix. See my coding example [here](./Dynamic_DID_(SA2021).do).
 
-[^1]: Ms. Sun is my second favorite female econometrician, and her papers on estimating treatment effects and using intrumental variables are worth reading. My top favorite female econometrician is [Xiaoxia Shi](https://users.ssc.wisc.edu/~xshi/) (UW-Madison), although it is too hard for me to understand her advanced research.
+[^2]: Ms. Sun is my second favorite female econometrician, and her papers on estimating treatment effects and using intrumental variables are worth reading. My top favorite female econometrician is [Xiaoxia Shi](https://users.ssc.wisc.edu/~xshi/) (UW-Madison), although it is too hard for me to understand her advanced research.
 
 
 ### Doubly Robust Estimator for DID
