@@ -115,7 +115,7 @@ In response to the contamination in the TWFE models, [Sun & Abraham (2021)](http
 
 One of the authors, [Liyang Sun](https://lsun20.github.io/)[^2] (Center for Monetary and Financial Studies, CEMFI), wrote a Stata package `eventstudyinteract` for implementing their IW estimator and constructing confidence interval for the estimation. To use the `eventstudyinteract` command, we have to install one more package (in addition to `reghdfe` and `ftools`): `avar`. The basic syntax is below:
 ```stata
-eventstudyinteract y rel_time_list, \\\
+eventstudyinteract y rel_time_list, ///
 	absorb(id t) cohort(variable) control_cohort(variable) vce(vcetype)
 ```
 Note that we must include a list of relative time indicators as we would have included in the classical dynamic DID regression.
@@ -332,8 +332,8 @@ gen never_union = (first_union == .)
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
-	eventstudyinteract ln_`y' Dn3 Dn2 D0-D4, \\\
-		cohort(first_union) control_cohort(never_union) \\\
+	eventstudyinteract ln_`y' Dn3 Dn2 D0-D4, ///
+		cohort(first_union) control_cohort(never_union) ///
 		absorb(product year) vce(cluster product#year)
 }
 ```
@@ -348,7 +348,7 @@ recode gvar (. = 0)
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{	
-	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) \\\
+	quietly csdid ln_`y', ivar(product) time(year) gvar(gvar) ///
 		method(dripw) wboot(reps(10000)) rseed(1)
 	csdid_estat event, window(-3 4) estore(cs_`y') wboot(reps(10000)) rseed(1)
 }
