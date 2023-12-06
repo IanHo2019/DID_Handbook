@@ -1,7 +1,7 @@
 # DID Handbook
 Comments on better coding or error correction are always welcomed. **Contact:** [ianho0815@outlook.com](mailto:ianho0815@outlook.com?subject=[GitHub]%20DID%20Handbook).
 
-**Difference in differences** (whose abbreviation is DID, DiD, or DD, and I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details of each DID estimator; please read related papers for greater details.
+**Difference in differences** (abbreviated as DID, DiD, or DD; I prefer using **DID**) is nowadays one of the most popular statistical techniques used in quantitative research in social sciences. The main reason for its popularity is that it's "easy" to understand and apply to empirical research. However, after reading a bunch of high-quality econometrics papers published recently (from 2017 to present), I realize that DID is not as easy as I thought before. The main goal of constructing this repository is to share my improved understanding of DID and my Stata coding for running DID. Note that here I only go over a bit details of each DID estimator; please read related papers for greater details.
 
 The table below summarizes various DID estimators and their prerequisites for validity; researchers may use it to search for a proper estimator in a certain setting.
 
@@ -14,6 +14,7 @@ The table below summarizes various DID estimators and their prerequisites for va
 | de Chaisemartin & D'Haultfœuille | $DID_M$ and $DID_{g,l}$ | :heavy_check_mark: | :heavy_check_mark: | | | |
 | [Borusyak, Jaravel & Spiess (2023)](https://arxiv.org/abs/2108.12419) | Imputation | :heavy_check_mark: | :heavy_check_mark: | | | |
 | [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345) | Extended TWFE | :heavy_check_mark: | :heavy_check_mark: | | | |
+| [Dube et al. (2023)](https://doi.org/10.3386/w31184) | LP-DID | :heavy_check_mark: | :heavy_check_mark: | | | |
 
 Before formally starting, I want to sincerely thank Professor [Corina Mommaerts](https://sites.google.com/site/corinamommaerts/) (UW-Madison), Professor [Christopher Taber](https://www.ssc.wisc.edu/~ctaber/) (UW-Madison), Professor [Bruce Hansen](https://www.ssc.wisc.edu/~bhansen/) (UW-Madison), Professor [Le Wang](https://www.lewangecon.com/) (OU), and Professor [Myongjin Kim](https://sites.google.com/site/mjmyongjinkim/) (OU) for lectures and advice during my exploration for DID. I also thank my former PhD colleagues [Mieon Seong](https://github.com/Mieoni), [Ningjing Gao](https://github.com/gao0012), and [JaeSeok Oh](https://github.com/JaeSeok1218) for their one-year support.
 
@@ -205,11 +206,9 @@ and [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s proposed mode
 $$Y_{it} = \eta + \sum_{g = q}^T \alpha_g G_{ig} + \sum_{s=q}^T \gamma_s F_s + \sum_{g = q}^T \sum_{s=g}^T \beta_{gs} D_{it} G_{ig} F_s + \varepsilon_{it}$$
 where $q$ denotes the first period the treatment occurs, $G_{ig}$ is a group dummy, and $F_s$ is a dummy indicating post-treatment period ($F_s = 1$ if $t = s$, where $s \in [q, T]$).
 
-To use this estimation strategy in Stata, Fernando Rios-Avila wrote a package named `jwdid`. The basic syntax is:
-```stata
-jwdid Y, ivar(id) tvar(time) gvar(cohort)
-```
-Note that this command, unlike `reghdfe`, does not drop singleton observations automatically, so statistical significance may be biased. What's worse, after using this command, we have to manually aggregate the estimates and then plot figures. Fortunately, Stata 18 introduces a new command: `xthdidregress`. One of its functions is to implement [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s extended TWFE estimator. The basic syntax is
+To use this estimation strategy in Stata, Fernando Rios-Avila first wrote a package named `jwdid`. However, the `jwdid` command, unlike `reghdfe`, does not drop singleton observations automatically, so statistical significance may be biased. What's worse, after using this command, we have to manually aggregate the estimates and then plot figures.
+
+Fortunately, Stata 18 introduced a new command: `xthdidregress`. One of its functions is to implement [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s extended TWFE estimator. The basic syntax is
 ```stata
 xthdidregress twfe (Y) (tvar), group(gvar)
 ```
@@ -218,8 +217,43 @@ In the post-estimation results, only the ATT estimates (for each cohort) at the 
 The extended TWFE estimator has a big advantage: it can be obtained from a very basic regression (pooled OLS) so that most researchers can understand it easily. However, a disadvantage is also obvious: its computation could be very intense because it usually includes many interactions and computes a great number of coefficient estimates. In the `xthdidregress` command, we can use the `hettype( )` option (specifying the type of heterogeneous treatment effects) to alter the default `timecohort` to `time` or `cohort` and then the complexity of computation is reduced.
 
 
+### Local Projection Estimator for DID
+As [Dube et al. (2023)](https://doi.org/10.3386/w31184) wrote, their local projection approach was motivated by the essential congruity between the concerns of applied microeconomists facing the challenge of estimating dynamic, heterogeneous, staggered treatment effects, and the concerns of applied macroeconomists who have long faced the task of estimating dynamic impulse-responses in time-series or panel data.
+
+The **local projection (LP)** specification is
+
+$$y_{i,t+h}-y_{i,t-1} = \delta_t^h + \beta_h^{LP} \Delta D_{it} + e_{it}^h \quad \text{for $h = 0, 1, ..., H$}$$
+
+Note that
+  * Unit fixed effects are not included for comparability with the conventional static and dynamic TWFE specifications.
+  * A different regression is needed for each time horizon $h$.
+  * In a setting with an absorbing treatment at time $s$, $\Delta D_{it} = 1$ at $s = t$, but $\Delta D_{it} = 0$ for $t \neq s$.
+
+[Dube et al. (2023)](https://doi.org/10.3386/w31184) proved the following equivalence: Under no-anticipation and parallel trends assumptions,
+  * In a simple $2\times2$ (i.e., 2-group and 2-period) setting, a static TWFE regression is equivalent to an LP specification at horizon $h = 0$.
+  * Assuming that treatment effects are homogeneous and that treatment is staggered, a dynamic TWFE regression is equivalent to the following LP regression:
+    $$y_{i,t+h}-y_{i,t-1} = \delta_t^h + \beta_h^{LP} \Delta D_{it} + \sum_{j=-h, j \neq 0} \theta_j^h \Delta D_{i,t-j} + e_{it}^h$$
+  * Assuming that treatment effects are heterogenous and that treatment is staggered, the coefficient of interest from an LP regression corresponds to a weighted average dynamic ATT plus two bias terms.
+
+Given the findings above, [Dube et al. (2023)](https://doi.org/10.3386/w31184) provided an LP-DID regression that
+  * removes previously treated observations and observations treated between $t+1$ and $t+h$ from the control group;
+  * provides a convex combination of all group-specific effects;
+  * is robust to possible failure of the homogeneous effects assumption.
+
+To use their approach in Stata, we have to install the `lpdid` package written by  [Alexander Busch](https://www.iza.org/en/people/staff/32795/alexander-busch) (IZA) and [Daniele Girardi](https://danielegirardi.github.io/) (University of Massachusetts Amherst), with a required package `egenmore`. Then we can use the `lpdid` command, whose basic syntax is
+```stata
+lpdid Y, time(time) unit(unit) treat(treat) pre(#) post(#) cluster(clst)
+```
+Variable `time` indexes time, variable `unit` indexes unit, and a dummy `treat` indicates the treatment. We can select the length of pre- and post-window of the estimates by the `pre(#)` and `post(#)` options. Other noteworthy options include:
+  * Use the `covariates( )` option if we want to include some covariates.
+  * Use `ylags(#)` and `dylags(#)` if we want to include lags of the dependent variable and the first-differenced dependent variable as covariates.
+  * By default, the `lpdid` command uses all clean controls (never-treated and not-yet-treated units). Adding the `nevertreated` option forces it to only use never-treated units.
+  * `rw` and `weights( )` allow us to reweight observations and then estimate an equally weighted ATT. The default estimate is a variance-weighted ATT. See Sections 3.2 and 3.3 of [Dube et al. (2023)](https://doi.org/10.3386/w31184) for details.
+  * `bootstrap(#)` and `seed(#)` allow us to do wild bootstrap estimation of standard errors.
+
+
 ### To be continued...
-Potential candidate: [Dube et al. (2023)](https://doi.org/10.3386/w31184).
+Potential candidate: [Gardner (2021)](https://doi.org/10.48550/arXiv.2207.05943) and [Hatamyar et al. (2023)](http://arxiv.org/pdf/2310.11962).
 
 ---
 
@@ -315,8 +349,9 @@ forvalues i = 0(1)3 {
 }
 gen D4 = (period_duty >= 4) & (period_duty != .)
 ```
+Then, it's time to run regressions!
 
-Then, it's time to run regressions! Coding for **classical dynamic DID** is:
+Coding for **classical dynamic DID** is:
 ```stata
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep'{
@@ -370,7 +405,7 @@ foreach y in `ylist'{
 ```
 Here I use the estimator in [de Chaisemartin & D'Haultfoeuille (2022)](https://arxiv.org/abs/2007.04267) because I want to estimate dynamic effects. Something noteworthy is that I use the long-difference placebos to do the placebo test; the dynamic effects are estimated using the long-difference DID estimator, so using long-difference placebos is a correct comparison. By contrast, the first-difference placebo estimators are DIDs across consecutive time periods; if `firstdiff_placebo` is added here, the graph produced to illustrate dynamic treatment effects will be meaningless (i.e., not comparable). A related discussion can be found [here](https://www.statalist.org/forums/forum/general-stata-discussion/general/1599964-graph-for-the-dynamic-treatment-effect-using-did_multiplegt-package).
 
-I personally don't like the graphs produced automatically by `did_multiplegt`, and sadly, the `graphoptions( )` option is not flexible as I expect. Therefore, I choose to withdraw and store the estimates in matrices. Then, the `event_plot` command can be used to create graphs. The process of creating graphs is very similar to what I did in applying [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006)'s estimator. My four-panel figure can be seen [here](./Figure/CD_DIDl_Trade_Destruction.pdf).
+I personally dislike the graphs produced automatically by `did_multiplegt`, and sadly, the `graphoptions( )` option is not flexible as I expect. Therefore, I choose to withdraw and store the estimates in matrices. Then, the `event_plot` command can be used to create graphs. The process of creating graphs is very similar to what I did in applying [Sun & Abraham (2021)](https://doi.org/10.1016/j.jeconom.2020.09.006)'s estimator. My four-panel figure can be seen [here](./Figure/CD_DIDl_Trade_Destruction.pdf).
 
 Coding for **imputation estimation** in DID is:
 ```stata
@@ -388,6 +423,7 @@ A four-panel figure presenting the dynamic effects estimated by the imputation a
 Coding for **extended TWFE estimation** in DID is:
 ```stata
 xtset product year
+gen treated = (period_duty < . & period_duty >= 0)
 
 local ylist = "value quantity m_quantity company_num"
 foreach y in `ylist'{
@@ -395,5 +431,14 @@ foreach y in `ylist'{
 }
 ```
 As I said before, here we cannot use `estat aggregation, dynamic` to plot a figure for presenting dynamic effects over all horizons. Therefore, I use `estat aggregation, time` to create four panels (see [here](./Figure/ETWFE_DID_Trade_Destruction.pdf)) showing the treatment effect at each point in time.
+
+Coding for **local projection estimation** in DID is
+```stata
+local ylist = "value quantity m_quantity company_num"
+foreach y in `ylist'{
+	lpdid ln_`y', time(year) unit(product) treat(treated) pre(3) post(4) cluster(clst) only_event nograph
+}
+```
+The `only_event` option tells the `lpdid` command to only compute the event-study estimates and not compute the pooled estimates; this can increase the computational speed. The `nograph` option suppresses the drawing of graph; I add this option because I personally dislike the graph drawn by default. We can use Stata's graph commands to plot flexibly by ourselves, given that all event-study results are stored in the matrix `e(results)` by `lpdid`. My customized plots of estimation are [here](https://github.com/IanHo2019/DID_Handbook/blob/main/Figure/LP_DID_Trade_Destruction.pdf).
 
 To summarize, regardless of estimation approaches, the results show persistent and negative effects of USA antidumping duty impositions on the four outcome variables. Complete coding for this example can be found [here](./Dynamic_DID_(Sino-US_Trade).do).
