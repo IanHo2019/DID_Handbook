@@ -33,6 +33,7 @@ gen D4 = (period_duty >= 4) & (period_duty != .)
 **# Classical Dynamic DID
 * ssc install reghdfe, replace
 * ssc install ftools, replace
+* ssc install estout, replace
 
 encode hs06, generate(product) // string variables are not allowed for "xtset" and regressions
 
@@ -378,6 +379,8 @@ graph export "$figdir\ETWFE_DID_Trade_Destruction.pdf", replace
 
 ********************************************************************************
 **# Dube et al. (2023)
+* ssc install lpdid, replace
+* ssc install egenmore, replace
 
 local dep = "value quantity company_num m_quantity"
 foreach y in `dep' {
