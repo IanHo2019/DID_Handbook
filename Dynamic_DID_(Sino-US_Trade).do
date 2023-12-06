@@ -1,6 +1,6 @@
 * This do file runs various dynamic DID specifications using data on China's export to the US in 2000-2009.
 * Author: Ian He
-* Date: Jun 23, 2023
+* Date: Dec 6, 2023
 * Stata Version: 18
 
 clear all
@@ -85,16 +85,16 @@ foreach y in `dep'{
 		local title = "ln(Mean Quantity)"
 	}
 	
-	forvalue i=1/7 {
+	forvalue i = 1/7 {
 		local m_`i' = e(b_iw)[1,`i']
 		local v_`i' = e(V_iw)[`i',`i']
 	}
 
-	matrix input matb_sa= (`m_1',`m_2',0,`m_3',`m_4',`m_5',`m_6',`m_7')
-	mat colnames matb_sa= ld3 ld2 ld1 lg0 lg1 lg2 lg3 lg4
+	matrix input matb_sa = (`m_1',`m_2',0,`m_3',`m_4',`m_5',`m_6',`m_7')
+	mat colnames matb_sa = ld3 ld2 ld1 lg0 lg1 lg2 lg3 lg4
 
-	matrix input mats_sa= (`v_1',`v_2',0,`v_3',`v_4',`v_5',`v_6',`v_7')
-	mat colnames mats_sa= ld3 ld2 ld1 lg0 lg1 lg2 lg3 lg4
+	matrix input mats_sa = (`v_1',`v_2',0,`v_3',`v_4',`v_5',`v_6',`v_7')
+	mat colnames mats_sa = ld3 ld2 ld1 lg0 lg1 lg2 lg3 lg4
 
 	event_plot matb_sa#mats_sa, ///
 		stub_lag(lg#) stub_lead(ld#) ///
@@ -231,11 +231,11 @@ foreach y in `dep'{
 		local v_`i' = e(variances)[`i',1]
 	}
 
-	matrix input matb_DIDl= (`m_1',`m_2',`m_3',`m_4',`m_5',0,`m_7',`m_8')
-	mat colnames matb_DIDl= lg0 lg1 lg2 lg3 lg4 ld1 ld2 ld3
+	matrix input matb_DIDl = (`m_1',`m_2',`m_3',`m_4',`m_5',0,`m_7',`m_8')
+	mat colnames matb_DIDl = lg0 lg1 lg2 lg3 lg4 ld1 ld2 ld3
 
-	matrix input mats_DIDl= (`v_1',`v_2',`v_3',`v_4',`v_5',0,`v_7',`v_8')
-	mat colnames mats_DIDl= lg0 lg1 lg2 lg3 lg4 ld1 ld2 ld3
+	matrix input mats_DIDl = (`v_1',`v_2',`v_3',`v_4',`v_5',0,`v_7',`v_8')
+	mat colnames mats_DIDl = lg0 lg1 lg2 lg3 lg4 ld1 ld2 ld3
 
 	event_plot matb_DIDl#mats_DIDl, ///
 		stub_lag(lg#) stub_lead(ld#) ///
@@ -373,3 +373,72 @@ grc1leg etwfe_value etwfe_quantity etwfe_company_num etwfe_m_quantity, ///
 
 gr draw etwfe_fig, ysize(5) xsize(6.5)
 graph export "$figdir\ETWFE_DID_Trade_Destruction.pdf", replace
+
+
+
+********************************************************************************
+**# Dube et al. (2023)
+
+local dep = "value quantity company_num m_quantity"
+foreach y in `dep' {
+	* Regression
+	lpdid ln_`y', time(year) unit(product) treat(treated) pre(3) post(4) cluster(clst) only_event nograph
+	
+	* Customize the figure titles
+	if "`y'"=="value"{
+		local panel = "A) ln(Value)"
+	}
+	
+	if "`y'"=="quantity"{
+		local panel = "B) ln(Total Quantity)"
+	}
+	
+	if "`y'"=="company_num"{
+		local panel = "C) ln(Number of Exporters)"
+	}
+	
+	if "`y'"=="m_quantity"{
+		local panel = "D) ln(Mean Quantity)"
+	}
+	
+	* Save estimated results
+	forvalue i = 1/8 {
+		local b_`i' = e(results)[`i',1]
+		local v_`i' = e(results)[`i',2]
+	}
+	
+	matrix input mat_lp = (`b_1', `v_1' \ `b_2', `v_2' \ 0, 0 \ `b_4', `v_4' \ `b_5', `v_5' \ `b_6', `v_6' \ `b_7', `v_7' \ `b_8', `v_8')
+
+	* Visualization
+	preserve
+	
+	svmat mat_lp
+	
+	keep mat_lp1 mat_lp2
+	rename mat_lp1 b
+	rename mat_lp2 se
+	
+	gen t = _n-4
+	gen low = b - 1.96 * se
+	gen high = b + 1.96 * se
+	
+	twoway (scatter b t if inrange(t, -3, 4), c(l) lc(dknavy) mc(dknavy) msymbol(smdiamond)) ///
+		(rcap high low t if inrange(t, -3, 4), c(l) lpattern(solid) lc(dknavy)), ///
+		xline(0, lc(gs11) lp(shortdash)) ///
+		yline(0, lc(gs11) lp(shortdash)) ///
+		title("`panel'", position(11)) ///
+		xti("Relative Year", size(medsmall)) yti("") ///
+		xlab(-3/4, nogrid) ///
+		legend(label(1 "ATT") label(2 "95% CI") rows(1) position(6) span region(lc(black))) ///
+		name(fig_`y', replace)
+	
+	restore
+}
+	
+grc1leg fig_value fig_quantity fig_company_num fig_m_quantity, ///
+	legendfrom(fig_value) cols(2) ///
+	graphregion(fcolor(white) lcolor(white)) ///
+	name(lpdid_fig, replace)
+
+gr draw lpdid_fig, ysize(5) xsize(6.5)
+graph export "$figdir\LP_DID_Trade_Destruction.pdf", replace
