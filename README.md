@@ -27,7 +27,7 @@ where
   * $Y_{it}$ is outcome of interest;
   * $\alpha_i$ is a unit or individual fixed effect;
   * $\gamma_t$ is a time fixed effect;
-  * $D_{it}$ is a 0/1 indicator for whether or not unit $i$ participating in the treatment in time period $t$;
+  * $D_{it}$ is a 0/1 indicator for whether or not unit $i$ participates in the treatment in time period $t$;
   * $\varepsilon_{it}$ are idiosyncratic and time-varying unobservables.
 
 Under **parallel trends**[^1], **no anticipation**, and **homogeneous treatment effect** assumptions, $\beta$ in the TWFE regression is equal to the causal effect of participating in the treatment. Unfortunately, this TWFE regression is NOT generally robust to treatment effect heterogeneity; this is a popular research topic in the current DID literature.
