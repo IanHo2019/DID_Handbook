@@ -206,9 +206,13 @@ and [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s proposed mode
 $$Y_{it} = \eta + \sum_{g = q}^T \alpha_g G_{ig} + \sum_{s=q}^T \gamma_s F_s + \sum_{g = q}^T \sum_{s=g}^T \beta_{gs} D_{it} G_{ig} F_s + \varepsilon_{it}$$
 where $q$ denotes the first period the treatment occurs, $G_{ig}$ is a group dummy, and $F_s$ is a dummy indicating post-treatment period ($F_s = 1$ if $t = s$, where $s \in [q, T]$).
 
-To use this estimation strategy in Stata, Fernando Rios-Avila first wrote a package named `jwdid`. However, the `jwdid` command, unlike `reghdfe`, does not drop singleton observations automatically, so statistical significance may be biased. What's worse, after using this command, we have to manually aggregate the estimates and then plot figures.
+To use this estimation strategy in Stata, Fernando Rios-Avila (Levy Economics Institute of Bard College) first wrote a package named `jwdid`. However, the `jwdid` command, unlike `reghdfe`, does not drop singleton observations automatically, so statistical significance may be biased. Its basic syntax is
+```stata
+jwdid Y, ivar(id) tvar(year) gvar(group)
+```
+After the regression, we can use some post-estimation commands to conveniently estimate ATTs for each group or each period and produce plots. For example, `estat event, plot` does the dynamic aggregation and returns a plot of estimation results.
 
-Fortunately, Stata 18 introduced a new command: `xthdidregress`. One of its functions is to implement [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s extended TWFE estimator. The basic syntax is
+Fortunately, Stata 18 introduced a built-in command: `xthdidregress`. One of its functions is to implement [Wooldridge (2021)](https://dx.doi.org/10.2139/ssrn.3906345)'s extended TWFE estimator. The basic syntax is
 ```stata
 xthdidregress twfe (Y) (tvar), group(gvar)
 ```
